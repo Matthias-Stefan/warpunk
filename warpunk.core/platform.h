@@ -33,14 +33,10 @@ typedef enum _platform_window_mode_t
 
 typedef struct _platform_window_info_t
 {
-    s16 x;
-    s16 y;
-    s16 window_width;
-    s16 window_height;
-    s16 client_width;
-    s16 client_height;
+    char* title;
+    s16 width;
+    s16 height;
     b8 is_visible;
-    b8 is_focused;
     s16 monitor_index;
     f32 dpi_scale;
     platform_window_mode_t platform_window_mode;

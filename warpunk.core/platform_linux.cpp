@@ -13,6 +13,7 @@
 #include <X11/XKBlib.h>
 #include <X11/keysym.h>
 #include <X11/keysymdef.h>
+#include <string.h>
 #include <vector>
 
 #include "input_types.h"
@@ -41,22 +42,12 @@
 
 //////////////////////////////////////////////////////////////////////
 
-typedef struct _linux_window_mode_hints_t
-{
-    unsigned long flags;
-    unsigned long functions;
-    unsigned long decorations;
-    long input_mode;
-    unsigned long status;
-} linux_window_mode_hints_t;
-
 typedef struct _linux_state_t
 {
     Display* display;
     xcb_connection_t* connection;
     xcb_window_t window;
     xcb_screen_t* screen;
-    platform_window_info_t window_info;
 
     platform_keyboard_event_t keyboard_event;
     platform_mouse_button_event_t mouse_button_event;
@@ -110,6 +101,22 @@ static linux_state_t linux_state;
     return true;
 }
 
+[[nodiscard]] xcb_atom_t platform_get_atom(const char* name)
+{
+    xcb_intern_atom_cookie_t cookie = xcb_intern_atom(linux_state.connection, 0, strlen(name), name);
+    xcb_intern_atom_reply_t* reply = xcb_intern_atom_reply(linux_state.connection, cookie, NULL);
+    if (!reply) 
+    {
+        fprintf(stderr, "Failed to get atom for %s\n", name);
+        return XCB_ATOM_NONE;
+    }
+
+    xcb_atom_t atom = reply->atom;
+    free(reply);
+    
+    return atom;
+}
+
 //////////////////////////////////////////////////////////////////////
 
 bool platform_startup()
@@ -138,21 +145,18 @@ bool platform_startup()
         XCB_EVENT_MASK_EXPOSURE | 
         XCB_EVENT_MASK_KEY_PRESS | XCB_EVENT_MASK_KEY_RELEASE | 
         XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE | 
-        XCB_EVENT_MASK_POINTER_MOTION };
+        XCB_EVENT_MASK_POINTER_MOTION | XCB_EVENT_MASK_STRUCTURE_NOTIFY };
 
-    s32 window_x = 500;
-    s32 window_y = 500;
-    s32 window_pos[2] = { window_x, window_y };
-    s32 window_width = 100;
-    s32 window_height = 100;
+    s32 window_width = 800;
+    s32 window_height = 600;
     s32 border_width = 0;
 
     if (!platform_result_is_success(xcb_create_window_checked(
                     linux_state.connection,              // X server connection
-                    CopyFromParent,                      // Window depth
+                    XCB_COPY_FROM_PARENT,                // Window depth
                     linux_state.window,                  // Window ID
                     linux_state.screen->root,            // Parent window (root)
-                    window_x, window_y,                  // Position (x, y)
+                    0, 0,                                // Position (x, y)
                     window_width, window_height,         // Size (width, height)
                     border_width,                        // Border width
                     XCB_WINDOW_CLASS_INPUT_OUTPUT,       // Window class
@@ -164,25 +168,14 @@ bool platform_startup()
         return false;
     }
    
-    xcb_configure_window(linux_state.connection, 
-            linux_state.window, 
-            XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y, 
-            window_pos); 
-
     if (!platform_result_is_success(xcb_map_window_checked(
                     linux_state.connection, 
                     linux_state.window)))
     {
         fprintf(stderr, "Failed to map window.\n");
     }
+
     xcb_flush(linux_state.connection);
-
-    if (!platform_get_window_info(&linux_state.window_info))
-    {
-        // TODO: logging
-        return false;
-    }
-
     return true;
 }
 
@@ -381,82 +374,93 @@ void platform_process_input()
     return true; 
 }
 
-// FIXME: window pos is necessary and also check if window is on top!
 [[nodiscard]] b8 platform_is_mouse_inside_window()
 {
-    Window root_return;
-    Window child_return;
-    s32 root_x, root_y;
-    s32 win_x, win_y;
-    u32 mask_return;
+    xcb_connection_t* connection = linux_state.connection;
+    xcb_window_t window = linux_state.window;
 
-    if (XQueryPointer(linux_state.display, linux_state.window, &root_return, &child_return, 
-                &root_x, &root_y, &win_x, &win_y, &mask_return))
+    xcb_query_pointer_cookie_t pointer_cookie = xcb_query_pointer(connection, window);
+    xcb_query_pointer_reply_t* pointer_reply = xcb_query_pointer_reply(connection, pointer_cookie, NULL);
+
+    if (!pointer_reply) 
     {
-        return win_x >= 0 && 
-               win_y >= 0 && 
-               win_x < linux_state.window_info.window_width 
-               && win_y < linux_state.window_info.window_height;
+        fprintf(stderr, "Failed to query pointer.\n");
+        return false;
     }
 
-    return false;
+    // Get window geometry
+    xcb_get_geometry_cookie_t geom_cookie = xcb_get_geometry(connection, window);
+    xcb_get_geometry_reply_t* geom_reply = xcb_get_geometry_reply(connection, geom_cookie, NULL);
+
+    if (!geom_reply)
+    {
+        fprintf(stderr, "Failed to get window geometry.\n");
+        free(pointer_reply);
+        return false;
+    }
+
+    bool inside = (pointer_reply->same_screen &&
+                   pointer_reply->win_x >= 0 && pointer_reply->win_x < geom_reply->width &&
+                   pointer_reply->win_y >= 0 && pointer_reply->win_y < geom_reply->height);
+
+    free(pointer_reply);
+    free(geom_reply);
+    return inside;
 }
 
 [[nodiscard]] b8 platform_set_window_mode(platform_window_mode_t platform_window_mode)
 {
-    Atom wm_state_atom = XInternAtom(linux_state.display, "_NET_WM_STATE", False);
-    Atom wm_state_fullscreen_atom = XInternAtom(linux_state.display, "_NET_WM_STATE_FULLSCREEN", False);
-    Atom motif_wm_hints_atom = XInternAtom(linux_state.display, "_MOTIF_WM_HINTS", True);
-    
-    if (!platform_get_window_info(&linux_state.window_info))
-    {
-        fprintf(stderr, "Failed to save window info.\n");
-        return false;
-    }
+    xcb_connection_t* connection = linux_state.connection;
+    xcb_window_t window = linux_state.window;
+    xcb_screen_t* screen = linux_state.screen;
+
+    xcb_atom_t wm_state_atom = platform_get_atom("_NET_WM_STATE");
+    xcb_atom_t wm_state_fullscreen_atom = platform_get_atom("_NET_WM_STATE_FULLSCREEN");
+    xcb_atom_t motif_wm_hints_atom = platform_get_atom("_MOTIF_WM_HINTS");
 
     switch (platform_window_mode) 
     {
         case FULLSCREEN:
         {
-            XEvent event = {};
-            event.type = ClientMessage;
-            event.xclient.window = linux_state.window;
-            event.xclient.message_type = wm_state_atom;
-            event.xclient.format = 32;
-            event.xclient.data.l[0] = 1;
-            event.xclient.data.l[1] = wm_state_fullscreen_atom;
-            event.xclient.data.l[2] = 0;
-            XSendEvent(linux_state.display, DefaultRootWindow(linux_state.display), False, 
-                    SubstructureNotifyMask | SubstructureRedirectMask, &event);
+            xcb_client_message_event_t event = {};
+            event.response_type = XCB_CLIENT_MESSAGE;
+            event.window = window;
+            event.type = wm_state_atom;
+            event.format = 32;
+            event.data.data32[0] = 1; // _NET_WM_STATE_ADD
+            event.data.data32[1] = wm_state_fullscreen_atom;
+            event.data.data32[2] = 0;
+
+            xcb_send_event(connection, 
+                    false, 
+                    screen->root,
+                    XCB_EVENT_MASK_SUBSTRUCTURE_NOTIFY | XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT,
+                    (const char*)&event);
         } break;
        
         case WINDOWED:
         default:
         {
-            XEvent event = {};
-            event.type = ClientMessage;
-            event.xclient.window = linux_state.window;
-            event.xclient.message_type = wm_state_atom;
-            event.xclient.format = 32;
-            event.xclient.data.l[0] = 0;
-            event.xclient.data.l[1] = wm_state_fullscreen_atom;
-            event.xclient.data.l[2] = 0;
-            XSendEvent(linux_state.display, DefaultRootWindow(linux_state.display), False, 
-                    SubstructureNotifyMask | SubstructureRedirectMask, &event);
+            xcb_client_message_event_t event = {};
+            event.response_type = XCB_CLIENT_MESSAGE;
+            event.window = window;
+            event.type = wm_state_atom;
+            event.format = 32;
+            event.data.data32[0] = 0; 
+            event.data.data32[1] = wm_state_fullscreen_atom;
+            event.data.data32[2] = 0;
 
-            linux_window_mode_hints_t windowed_hints = { 2, 0, 1, 0, 0 };
-            XChangeProperty(linux_state.display, linux_state.window, motif_wm_hints_atom, motif_wm_hints_atom, 
-                    32, PropModeReplace, (unsigned char*)&windowed_hints, 5);
+            xcb_send_event(connection, 
+                    false, 
+                    screen->root,
+                    XCB_EVENT_MASK_SUBSTRUCTURE_NOTIFY | XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT,
+                    (const char*)&event);
 
-            XMoveResizeWindow(linux_state.display, 
-                    linux_state.window, 
-                    linux_state.window_info.x, linux_state.window_info.y, 
-                    linux_state.window_info.window_width, linux_state.window_info.window_height);
         } break;
     }
 
-    XFlush(linux_state.display);
-    XSetInputFocus(linux_state.display, linux_state.window, RevertToParent, CurrentTime);
+    xcb_flush(connection);
+    xcb_set_input_focus(connection, XCB_INPUT_FOCUS_PARENT, window, XCB_CURRENT_TIME);
 
     return true;
 }
@@ -469,102 +473,107 @@ void platform_process_input()
         return false;
     }
 
-    XWindowAttributes attributes;
-    if (!XGetWindowAttributes(linux_state.display, linux_state.window, &attributes))
+    xcb_connection_t* connection = linux_state.connection;
+    xcb_window_t window = linux_state.window;
+
+     // I. Get Geometry (width, height)
+    xcb_get_geometry_cookie_t geom_cookie = xcb_get_geometry(connection, window);
+    xcb_get_geometry_reply_t* geom_reply = xcb_get_geometry_reply(connection, geom_cookie, NULL);
+
+    if (!geom_reply) 
     {
-        fprintf(stderr, "Failed to retrieve window attributes.\n");
+        fprintf(stderr, "Failed to get window geometry.\n");
         return false;
     }
-    platform_window_info->client_width = static_cast<s16>(attributes.width);
-    platform_window_info->client_height = static_cast<s16>(attributes.height);
 
-    s32 dest_x_result;
-    s32 dest_y_result;
-    Window child_result;
-    if (!XTranslateCoordinates(linux_state.display, linux_state.window, attributes.root,
-                0, 0, &dest_x_result, &dest_y_result, &child_result))
+    platform_window_info->width = geom_reply->width;
+    platform_window_info->height = geom_reply->height;
+    free(geom_reply);
+
+    // II. Check visibility (is_visible)
+    xcb_get_window_attributes_cookie_t attr_cookie = xcb_get_window_attributes(connection, window);
+    xcb_get_window_attributes_reply_t* attr_reply = xcb_get_window_attributes_reply(connection, attr_cookie, NULL);
+
+    if (!attr_reply) 
     {
-        fprintf(stderr, "Failed to translate coordinates.\n");
+        fprintf(stderr, "Failed to get window attributes.\n");
         return false;
     }
-    platform_window_info->x = dest_x_result;
-    platform_window_info->y = dest_y_result;
 
-    Atom net_frame_extents = XInternAtom(linux_state.display, "_NET_FRAME_EXTENTS", True);
-    Atom actual_type;
-    int actual_format;
-    unsigned long nitems, bytes_after;
-    long* extents = NULL;
+    platform_window_info->is_visible = (attr_reply->map_state == XCB_MAP_STATE_VIEWABLE);
+    free(attr_reply);
 
-    if (net_frame_extents &&
-        XGetWindowProperty(linux_state.display, 
-            attributes.root, net_frame_extents, 0, 4, False, XA_CARDINAL,
-            &actual_type, &actual_format, 
-            &nitems, &bytes_after, (unsigned char**)&extents) == Success && extents) 
+    // III. DPI Scale (dpi_scale)
+    // Here we assume a default DPI of 96 as base, scaling depending on monitor settings.
+    // More complex setups may require XRandR or Wayland for accurate DPI.
+    platform_window_info->dpi_scale = 1.0f; // Default DPI scale (could be updated with further queries)
+
+    // IV. Monitor Index (monitor_index)
+    // Simplification: Assuming a single monitor (0 index).
+    platform_window_info->monitor_index = 0;
+
+    // V. Title (title)
+    // Get window name (_NET_WM_NAME if supported, fallback to WM_NAME)
+    xcb_intern_atom_cookie_t net_wm_name_cookie = xcb_intern_atom(connection, 1, strlen("_NET_WM_NAME"), "_NET_WM_NAME");
+    xcb_intern_atom_reply_t* net_wm_name_reply = xcb_intern_atom_reply(connection, net_wm_name_cookie, NULL);
+
+    if (net_wm_name_reply) 
     {
-        s16 left = (s16)extents[0];
-        s16 right = (s16)extents[1];
-        s16 top = (s16)extents[2];
-        s16 bottom = (s16)extents[3];
+        xcb_get_property_cookie_t name_cookie = xcb_get_property(
+            connection, 0, window, net_wm_name_reply->atom, XCB_GET_PROPERTY_TYPE_ANY, 0, 128);
 
-        platform_window_info->window_width = platform_window_info->client_width + left + right;
-        platform_window_info->window_height = platform_window_info->client_height + top + bottom;
+        xcb_get_property_reply_t* name_reply = xcb_get_property_reply(connection, name_cookie, NULL);
 
-        free(extents);
+        if (name_reply) 
+        {
+            platform_window_info->title = strndup((char*)xcb_get_property_value(name_reply), xcb_get_property_value_length(name_reply));
+            free(name_reply);
+        } 
+        else 
+        {
+            platform_window_info->title = strdup("Unknown");
+        }
+        free(net_wm_name_reply);
     } 
     else 
     {
-        platform_window_info->window_width = platform_window_info->client_width;
-        platform_window_info->window_height = platform_window_info->client_height;
+        platform_window_info->title = strdup("Unknown");
     }
 
-#if false
-    // 4. Sichtbarkeit prüfen
-    info->is_visible = (attributes.map_state == IsViewable);
+    // VI. Platform Window Mode (platform_window_mode)
+    // Query _NET_WM_STATE to check if it's in fullscreen mode
+    xcb_intern_atom_cookie_t wm_state_cookie = xcb_intern_atom(connection, 1, strlen("_NET_WM_STATE"), "_NET_WM_STATE");
+    xcb_intern_atom_reply_t* wm_state_reply = xcb_intern_atom_reply(connection, wm_state_cookie, NULL);
 
-    // 5. Fokus prüfen (_NET_ACTIVE_WINDOW)
-    Atom net_active_window = XInternAtom(display, "_NET_ACTIVE_WINDOW", True);
-    if (net_active_window) {
-        Atom actual_type;
-        int actual_format;
-        unsigned long num_items, bytes_after;
-        unsigned char* prop = NULL;
+    if (wm_state_reply) 
+    {
+        xcb_get_property_cookie_t state_cookie = xcb_get_property(
+            connection, 0, window, wm_state_reply->atom, XCB_GET_PROPERTY_TYPE_ANY, 0, 32);
 
-        if (XGetWindowProperty(display, attributes.root, net_active_window, 0, 1, False, XA_WINDOW,
-                               &actual_type, &actual_format, &num_items, &bytes_after, &prop) == Success && prop) {
-            Window active_window = *(Window*)prop;
-            info->is_focused = (active_window == window);
-            XFree(prop);
+        xcb_get_property_reply_t* state_reply = xcb_get_property_reply(connection, state_cookie, NULL);
+
+        if (state_reply) 
+        {
+            xcb_atom_t* atoms = (xcb_atom_t*)xcb_get_property_value(state_reply);
+            int len = xcb_get_property_value_length(state_reply) / sizeof(xcb_atom_t);
+
+            xcb_atom_t fullscreen_atom = platform_get_atom("_NET_WM_STATE_FULLSCREEN");
+            platform_window_info->platform_window_mode = WINDOWED;
+
+            for (int i = 0; i < len; i++) 
+            {
+                if (atoms[i] == fullscreen_atom) 
+                {
+                    platform_window_info->platform_window_mode = FULLSCREEN;
+                    break;
+                }
+            }
+
+            free(state_reply);
         }
+        
+        free(wm_state_reply);
     }
-
-    // 6. Monitorinformationen
-    // Vereinfachte Annahme: Monitor 0 ist der gesamte Bildschirm
-    // Für Multi-Monitor: Hole Monitorgrenzen (z. B. mit RandR oder Xinerama)
-    info->monitor_index = 0;
-
-    // 7. DPI-Skalierung berechnen
-    int screen = DefaultScreen(display);
-    double dpi = ((double)DisplayWidth(display, screen) / (double)DisplayWidthMM(display, screen)) * 25.4;
-    info->dpi_scale = (float)(dpi / 96.0); // Skalierung relativ zu 96 DPI
-
-    return true;
-}
-#endif
-
-#if false
-    s16 x;
-    s16 y;
-    s16 window_width;
-    s16 window_height;
-    s16 client_width;
-    s16 client_height;
-    b8 is_visible;
-    b8 is_focused;
-    s16 monitor_index;
-    f32 dpi_scale;
-    platform_window_mode_t platform_window_mode;
-#endif
 
     return true;
 }
