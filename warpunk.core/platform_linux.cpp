@@ -219,61 +219,73 @@ void platform_process_input()
                     case PLATFORM_MOUSE_BUTTON_LEFT:
                     {
                         mouse_button = MOUSE_BUTTON_LEFT;
+                        linux_state.mouse_button_event(mouse_button, pressed);
                     } break;
                     case PLATFORM_MOUSE_BUTTON_MIDDLE:
                     {
                         mouse_button = MOUSE_BUTTON_MIDDLE;
+                        linux_state.mouse_button_event(mouse_button, pressed);
                     } break;
                     case PLATFORM_MOUSE_BUTTON_RIGHT:
                     {
                         mouse_button = MOUSE_BUTTON_RIGHT;
+                        linux_state.mouse_button_event(mouse_button, pressed);
                     } break;
                     case PLATFORM_MOUSE_BUTTON_1:
                     {
                         mouse_button = MOUSE_BUTTON_1;
+                        linux_state.mouse_button_event(mouse_button, pressed);
                     } break;
                     case PLATFORM_MOUSE_BUTTON_2:
                     {
                         mouse_button = MOUSE_BUTTON_2;
+                        linux_state.mouse_button_event(mouse_button, pressed);
                     } break;
                     case PLATFORM_MOUSE_BUTTON_3:
                     {
                         mouse_button = MOUSE_BUTTON_3;
+                        linux_state.mouse_button_event(mouse_button, pressed);
                     } break;
                     case PLATFORM_MOUSE_BUTTON_4:
                     {
                         mouse_button = MOUSE_BUTTON_4;
+                        linux_state.mouse_button_event(mouse_button, pressed);
                     } break;
                     case PLATFORM_MOUSE_BUTTON_5:
                     {
                         mouse_button = MOUSE_BUTTON_5;
+                        linux_state.mouse_button_event(mouse_button, pressed);
                     } break;
                     case PLATFORM_MOUSE_BUTTON_6:
                     {
                         mouse_button = MOUSE_BUTTON_6;
+                        linux_state.mouse_button_event(mouse_button, pressed);
                     } break;
                     case PLATFORM_MOUSE_BUTTON_7:
                     {
                         mouse_button = MOUSE_BUTTON_7;
+                        linux_state.mouse_button_event(mouse_button, pressed);
                     } break;
                     case PLATFORM_MOUSE_BUTTON_8:
                     {
                         mouse_button = MOUSE_BUTTON_8;
+                        linux_state.mouse_button_event(mouse_button, pressed);
                     } break;
                     case PLATFORM_MOUSE_BUTTON_9:
                     {
                         mouse_button = MOUSE_BUTTON_9;
+                        linux_state.mouse_button_event(mouse_button, pressed);
                     } break;
                     case PLATFORM_MOUSE_WHEEL_LEFT:
                     {
                         mouse_button = MOUSE_WHEEL_LEFT;
+                        linux_state.mouse_button_event(mouse_button, pressed);
                     } break;
                     case PLATFORM_MOUSE_WHEEL_RIGHT:
                     {
                         mouse_button = MOUSE_WHEEL_RIGHT;
-                    } break;
-                                        
-                    linux_state.mouse_button_event(mouse_button, pressed);
+                        linux_state.mouse_button_event(mouse_button, pressed);
+                    } break;                        
                 }
 
                 u32 delta = 0;
@@ -281,15 +293,15 @@ void platform_process_input()
                 {
                     case PLATFORM_MOUSE_WHEEL_UP:
                     {
-                        delta = pressed ? 1 : 0;
-                 
+                        delta = pressed ? 1 : 0; 
+                        linux_state.mouse_wheel_event(delta);
                     } break;
                     case PLATFORM_MOUSE_WHEEL_DOWN:
                     {
                         delta = pressed ? -1 : 0;
+                        linux_state.mouse_wheel_event(delta);
                     } break;
                
-                    linux_state.mouse_wheel_event(delta);
                 }
             } break;
 

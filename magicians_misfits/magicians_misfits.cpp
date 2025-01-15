@@ -17,6 +17,24 @@ void game_tick(double dt)
 
     fprintf(stderr, "%s (is_up, is_down, was_up, was_down): %i, %i, %i, %i\n", input_system_keycode_str(KEY_A), is_key_a_up, is_key_a_down, was_key_a_up, was_key_a_down);
 #endif
+    
+    s16 x_abs, y_abs, x_rel, y_rel;
+    input_system_get_mouse_position(&x_abs, &y_abs, &x_rel, &y_rel);
+    fprintf(stderr, "mouse (abs, rel): %i, %i, %i, %i\n", x_abs, y_abs, x_rel, y_rel);
+
+    for (int i = 0; i < MOUSE_BUTTON_COUNT; ++i)
+    {
+        if (input_system_is_mouse_button_pressed((mouse_button_t)i))
+        {
+            fprintf(stderr, "%i pressed\n", i);
+        }
+    }
+
+    s32 delta_abs, delta_rel;
+    if (input_system_get_mouse_wheel_delta(&delta_abs, &delta_rel))
+    {
+        fprintf(stderr, "mouse_delta: %i, %i\n", delta_abs, delta_rel);
+    }
 
     platform_window_info_t window_info = {};
     if (platform_get_window_info(&window_info))
