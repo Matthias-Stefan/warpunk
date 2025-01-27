@@ -1,5 +1,5 @@
-#include "../warpunk.core/platform.h"
-#include "../warpunk.core/input_system.h"
+#include <warpunk.core/platform//platform.h>
+#include <warpunk.core/input_system/input_system.h>
 #include <cstdio>
 
 void game_startup()

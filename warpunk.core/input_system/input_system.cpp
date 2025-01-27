@@ -1,8 +1,8 @@
-#include "input_system.h"
+#include "warpunk.core/input_system/input_system.h"
 
-#include "defines.h"
-#include "input_types.h"
-#include "platform.h"
+#include "warpunk.core/defines.h"
+#include "warpunk.core/input_system/input_types.h"
+#include "warpunk.core/platform/platform.h"
 
 //////////////////////////////////////////////////////////////////////
 

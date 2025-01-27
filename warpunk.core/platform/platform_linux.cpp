@@ -1,23 +1,16 @@
-#include "platform.h"
+#include "warpunk.core/platform/platform.h"
+#include "warpunk.core/platform/platform_linux.h"
 
 #include <X11/X.h>
 #include <cassert>
 #include <cstdlib>
 #include <cstdio>
 #include <dlfcn.h>
-#include <xcb/xcb.h>
-#include <xcb/xproto.h>
-#include <X11/Xatom.h>
-#include <X11/Xlib.h>
-#include <X11/Xlib-xcb.h>
-#include <X11/XKBlib.h>
-#include <X11/keysym.h>
-#include <X11/keysymdef.h>
 #include <string.h>
 #include <vector>
 
-#include "input_types.h"
-#include "defines.h"
+#include "warpunk.core/input_system/input_types.h"
+#include "warpunk.core/defines.h"
 
 //////////////////////////////////////////////////////////////////////
 
@@ -45,9 +38,8 @@
 typedef struct _linux_state_t
 {
     Display* display;
-    xcb_connection_t* connection;
-    xcb_window_t window;
     xcb_screen_t* screen;
+    linux_handle_info_t handle;
 
     platform_keyboard_event_t keyboard_event;
     platform_mouse_button_event_t mouse_button_event;
@@ -89,9 +81,9 @@ static linux_state_t linux_state;
     return "";
 }
 
-[[nodiscard]] static b8 platform_result_is_success(xcb_void_cookie_t cookie)
+[[nodiscard]] b8 platform_result_is_success(xcb_void_cookie_t cookie)
 {
-    xcb_generic_error_t* error = xcb_request_check(linux_state.connection, cookie);
+    xcb_generic_error_t* error = xcb_request_check(linux_state.handle.connection, cookie);
     if (error != NULL)
     {
         fprintf(stderr, "[%s] %i", platform_get_error_name(error->error_code), error->full_sequence);
@@ -103,8 +95,8 @@ static linux_state_t linux_state;
 
 [[nodiscard]] xcb_atom_t platform_get_atom(const char* name)
 {
-    xcb_intern_atom_cookie_t cookie = xcb_intern_atom(linux_state.connection, 0, strlen(name), name);
-    xcb_intern_atom_reply_t* reply = xcb_intern_atom_reply(linux_state.connection, cookie, NULL);
+    xcb_intern_atom_cookie_t cookie = xcb_intern_atom(linux_state.handle.connection, 0, strlen(name), name);
+    xcb_intern_atom_reply_t* reply = xcb_intern_atom_reply(linux_state.handle.connection, cookie, NULL);
     if (!reply) 
     {
         fprintf(stderr, "Failed to get atom for %s\n", name);
@@ -128,18 +120,20 @@ bool platform_startup()
         return false;
     }
 
-    linux_state.connection = XGetXCBConnection(linux_state.display);
-    if (xcb_connection_has_error(linux_state.connection))  
+    linux_state.handle.connection = XGetXCBConnection(linux_state.display);
+    if (xcb_connection_has_error(linux_state.handle.connection))  
     {
         fprintf(stderr, "Failed to connect to X server.\n");
         return false;
     }
 
-    const xcb_setup_t* setup = xcb_get_setup(linux_state.connection);
+    const xcb_setup_t* setup = xcb_get_setup(linux_state.handle.connection);
     xcb_screen_iterator_t iter = xcb_setup_roots_iterator(setup);
     linux_state.screen = iter.data;
 
-    linux_state.window = xcb_generate_id(linux_state.connection);
+    fprintf(stderr, "%i\n", linux_state.screen->root_depth);
+
+    linux_state.handle.window = xcb_generate_id(linux_state.handle.connection);
     u32 value_mask = XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK;
     u32 value_list[] = { linux_state.screen->black_pixel, 
         XCB_EVENT_MASK_EXPOSURE | 
@@ -152,9 +146,9 @@ bool platform_startup()
     s32 border_width = 0;
 
     if (!platform_result_is_success(xcb_create_window_checked(
-                    linux_state.connection,              // X server connection
+                    linux_state.handle.connection,       // X server connection
                     XCB_COPY_FROM_PARENT,                // Window depth
-                    linux_state.window,                  // Window ID
+                    linux_state.handle.window,           // Window ID
                     linux_state.screen->root,            // Parent window (root)
                     0, 0,                                // Position (x, y)
                     window_width, window_height,         // Size (width, height)
@@ -169,25 +163,25 @@ bool platform_startup()
     }
    
     if (!platform_result_is_success(xcb_map_window_checked(
-                    linux_state.connection, 
-                    linux_state.window)))
+                    linux_state.handle.connection, 
+                    linux_state.handle.window)))
     {
         fprintf(stderr, "Failed to map window.\n");
     }
 
-    xcb_flush(linux_state.connection);
+    xcb_flush(linux_state.handle.connection);
     return true;
 }
 
 void platform_shutdown()
 {
-    xcb_disconnect(linux_state.connection);
+    xcb_disconnect(linux_state.handle.connection);
 }
 
 void platform_process_input()
 {
     xcb_generic_event_t* event;
-    while ((event = xcb_poll_for_event(linux_state.connection)))
+    while ((event = xcb_poll_for_event(linux_state.handle.connection)))
     {
         switch (event->response_type & ~0x80) 
         {
@@ -336,6 +330,19 @@ void platform_process_input()
     }
 }
 
+[[nodiscard]] b8 platform_get_window_handle(s32* out_size, void* out_platform_handle)
+{
+    *out_size = sizeof(linux_handle_info_t);
+    if (!out_platform_handle)
+    {
+        return false; 
+    }
+
+    // TODO: Platform allocation methods 
+    memcpy(out_platform_handle, &linux_state.handle, sizeof(linux_handle_info_t));
+    return true;
+}
+
 [[nodiscard]] b8 platform_load_library(const char* path, library_context_t* out_library_context)
 {
     void* library_handle = dlopen(path, RTLD_NOW);
@@ -388,8 +395,8 @@ void platform_process_input()
 
 [[nodiscard]] b8 platform_is_mouse_inside_window()
 {
-    xcb_connection_t* connection = linux_state.connection;
-    xcb_window_t window = linux_state.window;
+    xcb_connection_t* connection = linux_state.handle.connection;
+    xcb_window_t window = linux_state.handle.window;
 
     xcb_query_pointer_cookie_t pointer_cookie = xcb_query_pointer(connection, window);
     xcb_query_pointer_reply_t* pointer_reply = xcb_query_pointer_reply(connection, pointer_cookie, NULL);
@@ -422,8 +429,8 @@ void platform_process_input()
 
 [[nodiscard]] b8 platform_set_window_mode(platform_window_mode_t platform_window_mode)
 {
-    xcb_connection_t* connection = linux_state.connection;
-    xcb_window_t window = linux_state.window;
+    xcb_connection_t* connection = linux_state.handle.connection;
+    xcb_window_t window = linux_state.handle.window;
     xcb_screen_t* screen = linux_state.screen;
 
     xcb_atom_t wm_state_atom = platform_get_atom("_NET_WM_STATE");
@@ -485,8 +492,8 @@ void platform_process_input()
         return false;
     }
 
-    xcb_connection_t* connection = linux_state.connection;
-    xcb_window_t window = linux_state.window;
+    xcb_connection_t* connection = linux_state.handle.connection;
+    xcb_window_t window = linux_state.handle.window;
 
      // I. Get Geometry (width, height)
     xcb_get_geometry_cookie_t geom_cookie = xcb_get_geometry(connection, window);

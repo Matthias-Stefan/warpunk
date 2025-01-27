@@ -1,31 +1,46 @@
 #!/bin/bash
 
-# Check if the "bin" directory exists; if not, create it
-if [ ! -d "bin" ]; then
-    echo "Creating bin/ directory..."
-    mkdir bin
-fi
+# Get the absolute path of the script
+SCRIPT_PATH="$(realpath "$0")"
+SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
 
-# Check if the "bin/debug" directory exists; if not, create it
-if [ ! -d "bin/debug" ]; then
-    echo "Creating bin/debug/ directory..."
-    mkdir -p bin/debug
-fi
+# Output directories
+DEBUG_DIR="${SCRIPT_DIR}/bin/debug"
 
-# Compile the engine source files into object files with debug symbols
-echo "Compiling engine files..."
-clang++ -std=c++17 -g -O0 -I./warpunk.core -DWARPUNK_EXPORT -fPIC -fvisibility=hidden -c main.cpp -o bin/debug/main.o
-clang++ -std=c++17 -g -O0 -I./warpunk.core -DWARPUNK_EXPORT -fPIC -fvisibility=hidden -c warpunk.core/platform_linux.cpp -o bin/debug/platform_linux.o
-clang++ -std=c++17 -g -O0 -I./warpunk.core -DWARPUNK_EXPORT -fPIC -fvisibility=hidden -c warpunk.core/input_system.cpp -o bin/debug/input_system.o
+# Ensure output directories exist
+mkdir -p "$DEBUG_DIR"
+
+# Compiler and flags
+CXX="clang++"
+CXXFLAGS="-std=c++17 -g -O0 -DWARPUNK_EXPORT -fPIC -fvisibility=hidden"
+INCLUDES="-I${SCRIPT_DIR} -I${SCRIPT_DIR}/warpunk.core -I/usr/include/vulkan"
+
+# Compile files in warpunk.core
+echo "Compiling files in warpunk.core:"
+$CXX $CXXFLAGS $INCLUDES -c main.cpp -o bin/debug/main.o
+
+WARPUNK_CPP_FILES=$(find "${SCRIPT_DIR}/warpunk.core" -name "*.cpp")
+WARPUNK_O_FILES=
+for file in $WARPUNK_CPP_FILES; do
+    RELATIVE_PATH=${file#${SCRIPT_DIR}/}
+    echo "$RELATIVE_PATH"
+    OBJECT_FILE="${DEBUG_DIR}/${RELATIVE_PATH%.cpp}.o"
+    mkdir -p "$(dirname "$OBJECT_FILE")"
+    $CXX $CXXFLAGS $INCLUDES -c "$file" -o "$OBJECT_FILE"
+    if [ $? -ne 0 ]; then
+        echo "Compilation failed for $RELATIVE_PATH"
+        exit 1
+    fi
+    WARPUNK_O_FILES="$WARPUNK_O_FILES $OBJECT_FILE"
+done
 
 # Compile the game into a shared library (DLL or .so)
 echo "Compiling magicians_misfits into a shared library..."
 clang++ -std=c++17 -g -O0 -I./ -shared -fPIC magicians_misfits/magicians_misfits.cpp -o bin/debug/magicians_misfits.so
 
-# Link the engine object files into the final executable and link X11 libraries
+# Link the engine object files into the final executable
 echo "Linking object files into the final executable..."
-#clang++ -std=c++17 -g -o bin/debug/warpunk.out bin/debug/main.o bin/debug/platform_linux.o -ldl -lX11 -lX11-xcb -lxcb
-clang++ -std=c++17 -g -rdynamic -o bin/debug/warpunk.out bin/debug/main.o bin/debug/platform_linux.o bin/debug/input_system.o -ldl -lX11 -lX11-xcb -lxcb
+clang++ -std=c++17 -g -rdynamic -o bin/debug/warpunk.out bin/debug/main.o $WARPUNK_O_FILES -lvulkan -ldl -lX11 -lX11-xcb -lxcb
 
 # Check if the build was successful
 if [ $? -eq 0 ]; then

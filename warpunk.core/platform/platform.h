@@ -2,8 +2,8 @@
 
 #include <vector>
 
-#include "defines.h"
-#include "input_types.h"
+#include "warpunk.core/defines.h"
+#include "warpunk.core/input_system/input_types.h"
 
 //////////////////////////////////////////////////////////////////////
 
@@ -51,6 +51,9 @@ void platform_shutdown();
 /** */
 void platform_process_input();   
 
+/** */
+[[nodiscard]] b8 platform_get_window_handle(s32* size, void* platform_handle);
+
 //* */
 warpunk_api [[nodiscard]] b8 platform_load_library(const char* path, library_context_t* out_library_context);
 
@@ -61,7 +64,6 @@ warpunk_api [[nodiscard]] b8 platform_unload_library(library_context_t* library_
 warpunk_api [[nodiscard]] b8 platform_get_function(library_context_t* library_context, function_description_t* out_function_description);
 
 /** */
-// FIXME:
 warpunk_api [[nodiscard]] b8 platform_is_mouse_inside_window();
 
 /** */

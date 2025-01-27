@@ -1,8 +1,8 @@
 #pragma once
 
-#include "defines.h"
-#include "input_types.h"
-#include "platform.h"
+#include "warpunk.core/defines.h"
+#include "warpunk.core/input_system/input_types.h"
+#include "warpunk.core/platform/platform.h"
 
 typedef struct _input_system_config_t
 {
