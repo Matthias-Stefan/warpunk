@@ -140,7 +140,10 @@ v3_t<T> unit_vector(const v3_t<T>& vector)
 }
 
 template<typename T>
-using point3_t = v3_t<T>;
+using p3_t = v3_t<T>;
 
 using v3f32_t = v3_t<f32>;
 using v3f64_t = v3_t<f64>;
+
+using p3f32_t = p3_t<f32>;
+using p3f64_t = p3_t<f64>;
