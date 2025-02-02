@@ -1,5 +1,6 @@
 #pragma once
 
+#include "warpunk.core/math/math_common.hpp"
 #include "warpunk.core/math/v3.hpp"
 #include "warpunk.core/math/ray.hpp"
 
@@ -34,11 +35,11 @@ void set_face_normal(hit_record_t<T>* hit_record, const ray_t<T>* ray, const v3_
 
 /** */
 template<typename S, typename T, typename std::enable_if<!std::is_same<S, sphere_t<T>>::value>::type* = nullptr>
-[[nodiscard]] b8 hit(const S* object, ray_t<T>* ray, f64 ray_tmin, f64 ray_tmax, hit_record_t<T>* out_hit_record) = delete;
+[[nodiscard]] b8 hit(const S* object, ray_t<T>* ray, interval_t<T> interval, hit_record_t<T>* out_hit_record) = delete;
 
 /** */
 template<typename S, typename T, typename std::enable_if<std::is_same<S, sphere_t<T>>::value>::type* = nullptr>
-[[nodiscard]] b8 hit(const S* sphere, ray_t<T>* ray, f64 ray_tmin, f64 ray_tmax, hit_record_t<T>* out_hit_record)
+[[nodiscard]] b8 hit(const S* sphere, ray_t<T>* ray, interval_t<T> interval, hit_record_t<T>* out_hit_record)
 {
     v3f64_t oc = sphere->center - ray->origin;
     auto a = length_squared(ray->dir);
@@ -59,10 +60,10 @@ template<typename S, typename T, typename std::enable_if<std::is_same<S, sphere_
 
     // find the nearest root that lies in the acceptable range.
     auto root = (h - sqrtd) / a;
-    if (root <= ray_tmin || ray_tmax <= root)
+    if (!surrounds(&interval, root))
     {
         root = (h + sqrtd) / a;
-        if (root <= ray_tmin || ray_tmax <= root)
+        if (!surrounds(&interval, root))
         {
             return false;
         }
