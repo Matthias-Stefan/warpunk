@@ -104,7 +104,7 @@ v3_t<T> operator/(const v3_t<T>& vector, f64 t)
 }
 
 template<typename T>
-T length_squared(const v3_t<T>& vector)
+[[nodiscard]] T length_squared(const v3_t<T>& vector)
 {
     return vector.x * vector.x + 
            vector.y * vector.y + 
@@ -112,13 +112,13 @@ T length_squared(const v3_t<T>& vector)
 }
 
 template<typename T>
-T length(const v3_t<T>& vector)
+[[nodiscard]] T length(const v3_t<T>& vector)
 {
     return std::sqrt(length_squared(vector));
 }
 
 template<typename T>
-f64 dot(const v3_t<T>& v1, const v3_t<T>& v2)
+[[nodiscard]] f64 dot(const v3_t<T>& v1, const v3_t<T>& v2)
 {
     return v1.x * v2.x +
            v1.y * v2.y +
@@ -126,7 +126,7 @@ f64 dot(const v3_t<T>& v1, const v3_t<T>& v2)
 }
 
 template<typename T>
-v3_t<T> cross(const v3_t<T>& v1, const v3_t<T>& v2)
+[[nodiscard]] v3_t<T> cross(const v3_t<T>& v1, const v3_t<T>& v2)
 {
     return v3_t<T> { .x = v1.y * v2.z - v1.z * v2.y,
                      .y = v1.z * v2.x - v1.x * v2.z,
@@ -134,10 +134,38 @@ v3_t<T> cross(const v3_t<T>& v1, const v3_t<T>& v2)
 }
 
 template<typename T>
-v3_t<T> unit_vector(const v3_t<T>& vector)
+[[nodiscard]] v3_t<T> unit_vector(const v3_t<T>& vector)
 {
     return vector / length(vector);
 }
+
+template<typename T> [[nodiscard]] inline v3_t<T> zero() = delete;
+template<typename T, typename std::enable_if_t<
+    std::is_same_v<T, s8> ||
+    std::is_same_v<T, s16> ||
+    std::is_same_v<T, s32> ||
+    std::is_same_v<T, s64>, int> = 0>
+[[nodiscard]] inline v3_t<T> zero()
+{
+    return v3_t<T> { .x = 0, 
+                     .y = 0,
+                     .z = 0 };
+}
+template<>
+[[nodiscard]] inline v3_t<f32> zero()
+{
+    return v3_t<f32> { .x = 0.0f,
+                       .y = 0.0f,
+                       .z = 0.0f };
+}
+template<>
+[[nodiscard]] inline v3_t<f64> zero()
+{
+    return v3_t<f64> { .x = 0.0,
+                       .y = 0.0,
+                       .z = 0.0 };
+}
+
 
 template<typename T>
 using p3_t = v3_t<T>;

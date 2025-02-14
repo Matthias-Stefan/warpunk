@@ -141,7 +141,7 @@ bool platform_startup()
         XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE | 
         XCB_EVENT_MASK_POINTER_MOTION | XCB_EVENT_MASK_STRUCTURE_NOTIFY };
 
-    s32 window_width = 800;
+    s32 window_width = 1200;
     s32 window_height = 600;
     s32 border_width = 0;
 
