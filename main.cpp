@@ -38,6 +38,12 @@ int main()
        fprintf(stderr, "Failed to startup renderer.\n"); 
     }
 
+    renderer_config.type = RENDERER_TYPE_VULKAN;
+    if (!renderer_startup(renderer_config))
+    {
+        fprintf(stderr, "Failed to startup renderer.\n");
+    }
+
     // Game 
     library_context_t library_context = {};
     if (!platform_load_library("./bin/debug/magicians_misfits.so", &library_context))
