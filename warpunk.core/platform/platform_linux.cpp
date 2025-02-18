@@ -1,16 +1,30 @@
 #include "warpunk.core/platform/platform.h"
 #include "warpunk.core/platform/platform_linux.h"
 
-#include <X11/X.h>
 #include <cassert>
 #include <cstdlib>
 #include <cstdio>
 #include <dlfcn.h>
+#include <pthread.h>
+#include <stdlib.h>
 #include <string.h>
-#include <vector>
+#include <sys/mman.h>
+#include <unistd.h>
+#include <xcb/xcb.h>
+#include <xcb/xproto.h>
+#include <X11/X.h>
+#include <X11/Xatom.h>
+#include <X11/Xlib.h>
+#include <X11/Xlib-xcb.h>
+#include <X11/XKBlib.h>
+#include <X11/keysym.h>
+#include <X11/keysymdef.h>
 
-#include "warpunk.core/input_system/input_types.h"
 #include "warpunk.core/defines.h"
+#include "warpunk.core/input_system/input_types.h"
+#include "warpunk.core/container/dynarray.hpp"
+#include "warpunk.core/container/dynqueue.hpp"
+
 
 //////////////////////////////////////////////////////////////////////
 
@@ -31,15 +45,32 @@
 #define PLATFORM_MOUSE_BUTTON_8 15
 #define PLATFORM_MOUSE_BUTTON_9 16
 
+#define PLATFORM_THREADPOOL_THREAD_COUNT 32
+
 [[nodiscard]] static keycode_t translate_keycode(const unsigned int key_code);
 
 //////////////////////////////////////////////////////////////////////
+
+typedef struct _linux_threading_job_t
+{
+    pthread_t thread_id;
+    platform_threading_job_t job;
+} linux_threading_job_t;
+
+typedef struct _linux_threading_job_description_t
+{
+    dynarray_t<linux_threading_job_t> jobs; 
+} linux_threading_job_description_t;
 
 typedef struct _linux_state_t
 {
     Display* display;
     xcb_screen_t* screen;
     linux_handle_info_t handle;
+
+    s32 next_job = 0;
+    dynarray_t<linux_threading_job_description_t> jobs = 
+        dynarray_create<linux_threading_job_description_t>(32);
 
     platform_keyboard_event_t keyboard_event;
     platform_mouse_button_event_t mouse_button_event;
@@ -141,8 +172,8 @@ bool platform_startup()
         XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE | 
         XCB_EVENT_MASK_POINTER_MOTION | XCB_EVENT_MASK_STRUCTURE_NOTIFY };
 
-    s32 window_width = 1200;
-    s32 window_height = 600;
+    s32 window_width = 960;
+    s32 window_height = 540;
     s32 border_width = 0;
 
     if (!platform_result_is_success(xcb_create_window_checked(
@@ -170,6 +201,7 @@ bool platform_startup()
     }
 
     xcb_flush(linux_state.handle.connection);
+
     return true;
 }
 
@@ -596,6 +628,95 @@ void platform_process_input()
 
     return true;
 }
+// MEMORY
+
+[[nodiscard]] void* platform_memory_alloc(s64 size)
+{
+    void* memory = aligned_alloc(16, size);
+    return memory;
+}
+
+void platform_memory_free(void* src)
+{
+    free(src);
+}
+
+void platform_memory_copy(void* dst, void* src, s64 size)
+{
+    memcpy(dst, src, size);
+}
+
+void platform_memory_set(void* dst, s64 size, s32 value)
+{
+    memset(dst, value, size);
+}
+
+void platform_memory_zero(void* dst, s64 size)
+{
+    memset(dst, 0, size);
+}
+
+/** threading */ 
+
+static void* platform_threading_execute(void* args)
+{
+    linux_threading_job_t* linux_job = (linux_threading_job_t *)args;
+    linux_job->job.function(linux_job->job.arg);
+
+    linux_job->job.function = nullptr;
+    platform_memory_free(linux_job->job.arg); 
+    linux_job->job.arg_size = 0;
+
+    return nullptr;
+}
+
+void platform_threadpool_add(platform_threading_job_t* chunk, u32 chunk_count, thread_ticket_t* out_ticket)
+{
+    linux_threading_job_description_t* job_description = &linux_state.jobs.data[linux_state.next_job]; 
+    job_description->jobs = dynarray_create<linux_threading_job_t>(chunk_count);
+
+    for (s32 job_index = 0; job_index < chunk_count; ++job_index)
+    {
+        linux_threading_job_t* linux_job = &job_description->jobs.data[job_index];
+        linux_job->job.function = chunk->function;
+        linux_job->job.arg_size = chunk->arg_size;
+        linux_job->job.arg = platform_memory_alloc(chunk->arg_size);
+        platform_memory_copy(linux_job->job.arg, ((u8 *)chunk->arg) + chunk->arg_size * job_index, chunk->arg_size);
+    
+        pthread_create(&linux_job->thread_id, 
+                nullptr, 
+                platform_threading_execute, 
+                (void *)linux_job);
+    }
+
+    job_description->jobs.capacity = chunk_count;
+    *out_ticket = job_description; 
+}
+
+[[nodiscard]] b8 platform_threadpool_cancel(thread_ticket_t ticket)
+{
+    return true;
+}
+
+void platform_threadpool_sync(thread_ticket_t ticket, f64 cancellation_time)
+{
+    linux_threading_job_description_t* job_description = (linux_threading_job_description_t *)ticket;
+    for (s32 job_index = 0; job_index < job_description->jobs.capacity; ++job_index)
+    {
+        pthread_join(job_description->jobs.data[job_index].thread_id, nullptr);
+    }
+}
+
+[[nodiscard]] s32 platform_threadpool_get_active_thread_count()
+{
+    return 0;
+}
+
+void platform_threadpool_dump_status()
+{
+}
+
+/** events */
 
 void platform_register_keyboard_event(platform_keyboard_event_t callback)
 {

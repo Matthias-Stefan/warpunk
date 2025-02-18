@@ -33,7 +33,6 @@ void set_face_normal(hit_record_t<T>* hit_record, const ray_t<T>* ray, const v3_
     hit_record->normal = hit_record->front_face ? *outward_normal : -(*outward_normal);
 }
 
-/** */
 template<typename S, typename T, typename std::enable_if<!std::is_same<S, sphere_t<T>>::value>::type* = nullptr>
 [[nodiscard]] b8 hit(const S* object, ray_t<T>* ray, interval_t<T> interval, hit_record_t<T>* out_hit_record) = delete;
 

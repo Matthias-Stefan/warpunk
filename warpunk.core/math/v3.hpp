@@ -1,6 +1,7 @@
 #pragma once
 
 #include "warpunk.core/defines.h"
+#include "warpunk.core/math/math_common.hpp"
 
 #include <cmath>
 
@@ -133,13 +134,9 @@ template<typename T>
                      .z = v1.x * v2.y - v1.y * v2.x };
 }
 
-template<typename T>
-[[nodiscard]] v3_t<T> unit_vector(const v3_t<T>& vector)
-{
-    return vector / length(vector);
-}
+template<typename T> 
+[[nodiscard]] inline v3_t<T> zero() = delete;
 
-template<typename T> [[nodiscard]] inline v3_t<T> zero() = delete;
 template<typename T, typename std::enable_if_t<
     std::is_same_v<T, s8> ||
     std::is_same_v<T, s16> ||
@@ -151,6 +148,7 @@ template<typename T, typename std::enable_if_t<
                      .y = 0,
                      .z = 0 };
 }
+
 template<>
 [[nodiscard]] inline v3_t<f32> zero()
 {
@@ -158,12 +156,100 @@ template<>
                        .y = 0.0f,
                        .z = 0.0f };
 }
+
 template<>
 [[nodiscard]] inline v3_t<f64> zero()
 {
     return v3_t<f64> { .x = 0.0,
                        .y = 0.0,
                        .z = 0.0 };
+}
+
+template<typename T> 
+[[nodiscard]] inline v3_t<T> random_vector()
+{
+    if constexpr (std::is_same_v<T, f32> || std::is_same_v<T, f64>)
+    {
+        return v3_t<T> { .x = randreal<T>(),
+                         .y = randreal<T>(),
+                         .z = randreal<T>() };
+    }
+    else if constexpr (std::is_same_v<T, s16> || std::is_same_v<T, s32> || std::is_same_v<T, s64>)
+    {
+        return v3_t<T> { .x = randint<T>(),
+                         .y = randint<T>(),
+                         .z = randint<T>() };
+
+    }
+
+    return v3_t<T> { 0, 0, 0 };
+}
+
+template<typename T> 
+[[nodiscard]] inline v3_t<T> random_vector(T low, T high)
+{
+    if constexpr (std::is_same_v<T, f32> || std::is_same_v<T, f64>)
+    {
+        return v3_t<T> { .x = randreal<T>(low, high),
+                         .y = randreal<T>(low, high),
+                         .z = randreal<T>(low, high) };
+    }
+    else if constexpr (std::is_same_v<T, s16> || std::is_same_v<T, s32> || std::is_same_v<T, s64>)
+    {
+        return v3_t<T> { .x = randint<T>(low, high),
+                         .y = randint<T>(low, high),
+                         .z = randint<T>(low, high) };
+
+    }
+
+    return v3_t<T> { 0, 0, 0 };
+}
+
+template<typename T> 
+[[nodiscard]] inline v3_t<T> random_vector01()
+{
+    if constexpr (std::is_same_v<T, f32> || std::is_same_v<T, f64>)
+    {
+        return v3_t<T> { .x = randreal01<T>(),
+                         .y = randreal01<T>(),
+                         .z = randreal01<T>() };
+    }
+
+    return v3_t<T> { 0, 0, 0 };
+}
+
+template<typename T>
+[[nodiscard]] inline v3_t<T> unit_vector(const v3_t<T>& vector)
+{
+    return vector / length(vector);
+}
+
+template<typename T>
+[[nodiscard]] inline v3_t<T> random_unit_vector()
+{
+    while (true)
+    {
+        v3_t<T> p = random_vector01<T>();
+        auto lensq = length_squared(p);
+        if (1e-160 < lensq && lensq <= 1)
+        {
+            return p / std::sqrt(lensq);
+        }
+    }
+}
+
+template<typename T>
+[[nodiscard]] inline v3_t<T> random_on_hemisphere(const v3_t<T> normal)
+{
+    v3_t<T> on_unit_sphere = random_unit_vector<T>();
+    if (dot(on_unit_sphere, normal) > 0)
+    {
+        return on_unit_sphere;
+    }
+    else
+    {
+        return -on_unit_sphere;
+    }
 }
 
 

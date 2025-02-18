@@ -12,7 +12,7 @@ typedef struct _renderer_config_t
 {
     renderer_type_t type;
     s32 width;
-    s32 height;
+    f64 aspect_ratio;
 } renderer_config_t;
 
 typedef u32 buffer_handle_t;

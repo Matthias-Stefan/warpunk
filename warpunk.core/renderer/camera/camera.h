@@ -9,12 +9,12 @@ typedef struct _camera_config_t
     s32 image_width;
     f64 viewport_height;
     s32 samples_per_pixel;
+    s32 max_depth;
 } camera_config_t;
-
-typedef u32 camera_handle_t;
 
 /** */
 camera_handle_t camera_create(camera_config_t camera_config);
 
 /** */
-void camera_ray_cast(camera_handle_t camera_handle, void* objects, b8* out_buffer);
+void camera_ray_cast(camera_handle_t camera_handle, void* objects, u8* out_buffer);
+

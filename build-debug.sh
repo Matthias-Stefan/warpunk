@@ -12,7 +12,7 @@ mkdir -p "$DEBUG_DIR"
 
 # Compiler and flags
 CXX="clang++"
-CXXFLAGS="-std=c++17 -g -O0 -DWARPUNK_EXPORT -fPIC -fvisibility=hidden"
+CXXFLAGS="-std=c++17 -Werror -Wunused-function -g -O0 -DWARPUNK_EXPORT -fPIC -fvisibility=hidden"
 INCLUDES="-I${SCRIPT_DIR} -I${SCRIPT_DIR}/warpunk.core -I/usr/include/vulkan"
 
 # Compile files in warpunk.core

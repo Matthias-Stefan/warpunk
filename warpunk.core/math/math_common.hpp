@@ -3,8 +3,8 @@
 #include "warpunk.core/defines.h"
 
 #include <cmath>
-#include <cstdlib>
 #include <limits>
+#include <random>
 #include <type_traits>
 
 const f32 inf32 = std::numeric_limits<f32>::infinity();
@@ -95,22 +95,55 @@ template<typename T>
 }
 
 // random
+static std::random_device random_device;
+static std::mt19937 gen(random_device()); 
 
 /** */
-[[nodiscard]] inline f64 random_f64()
+template<typename T, std::enable_if_t<std::is_same_v<T, s16> || std::is_same_v<T, s32> || std::is_same_v<T, s64>, int> = 0>
+[[nodiscard]] inline T randint()
 {
-    //* returns a random real in [0, 1) */
-    return std::rand() / (RAND_MAX + 1.0);
+    std::uniform_int_distribution<T> distribution(std::numeric_limits<T>::min(), std::numeric_limits<T>::max());
+    return distribution(gen);
 }
 
 /** */
-[[nodiscard]] inline f64 random_f64(f64 low, f64 high)
+template<typename T, std::enable_if_t<std::is_same_v<T, s16> || std::is_same_v<T, s32> || std::is_same_v<T, s64>, int> = 0>
+[[nodiscard]] inline T randint(T low, T high)
 {
-    return low + (high - low) * random_f64();
+    std::uniform_int_distribution<T> distribution(low, high);
+    return distribution(gen);
 }
 
+/** */
+template<typename T, std::enable_if_t<std::is_same_v<T, f32> || std::is_same_v<T, f64>, int> = 0>
+[[nodiscard]] inline T randreal()
+{
+    std::uniform_real_distribution<T> distribution(std::numeric_limits<T>::min(), std::numeric_limits<T>::max());
+    return distribution(gen);
+}
 
+/** */
+template<typename T, std::enable_if_t<std::is_same_v<T, f32> || std::is_same_v<T, f64>, int> = 0>
+[[nodiscard]] inline T randreal(T low, T high)
+{
+    std::uniform_real_distribution<T> distribution(low, high);
+    return distribution(gen);
+}
 
+template<typename T>
+[[nodiscard]] inline T randreal01() = delete;
 
+template<>
+[[nodiscard]] inline f32 randreal01()
+{
+    std::uniform_real_distribution<f32> distribution(0.0f, 1.0f);
+    return distribution(gen);
+}
 
+template<>
+[[nodiscard]] inline f64 randreal01()
+{
+    std::uniform_real_distribution<f64> distribution(0.0, 1.0);
+    return distribution(gen);
+}
 

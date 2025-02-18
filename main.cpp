@@ -7,6 +7,8 @@
 #include "warpunk.core/input_system/input_system.h"
 #include "warpunk.core/renderer/renderer_backend.h"
 
+#include "warpunk.core/container/dynarray.hpp"
+
 //////////////////////////////////////////////////////////////////////
 
 int main() 
@@ -31,15 +33,15 @@ int main()
     // Renderer
     renderer_config_t renderer_config = {};
     renderer_config.type = RENDERER_TYPE_SOFTWARE;
-    renderer_config.width = 800;
-    renderer_config.height = 600; 
+    renderer_config.width = 1920;
+    renderer_config.aspect_ratio = 16.0 / 9.0; 
     if (!renderer_startup(renderer_config))
     {
        fprintf(stderr, "Failed to startup renderer.\n"); 
     }
 
     renderer_config.type = RENDERER_TYPE_VULKAN;
-    if (!renderer_startup(renderer_config))
+ if (!renderer_startup(renderer_config))
     {
         fprintf(stderr, "Failed to startup renderer.\n");
     }

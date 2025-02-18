@@ -24,27 +24,29 @@ namespace software_renderer
         }
 
         width = renderer_config.width;
-        height = renderer_config.height;
+        height = (s32)((f64)renderer_config.width / renderer_config.aspect_ratio);
+        height = (height < 1) ? 1 : height;
 
         /** camera */
         camera_config_t camera_config = {
-            .aspect_ratio = 16.0 / 9.0,
+            .aspect_ratio = renderer_config.aspect_ratio,
             .focal_length = 1.0,
             .image_width = renderer_config.width,
             .viewport_height = 2.0,
-            .samples_per_pixel = 64
+            .samples_per_pixel = 16,
+            .max_depth = 50,
         };
         camera_handle = camera_create(camera_config);
 
         /** spheres */
-        spheres[0] = { { 0, 0, -1 }, 0.3 };
-        spheres[1] = { { 1, 0, -1 }, 0.3 };
+        spheres[0] = { { 0, 0, -1 }, 0.5 };
+        spheres[1] = { { 0, -100.5, -1 }, 100 };
         return true;
     }   
 
     void renderer_begin_frame()
     {
-        camera_ray_cast(camera_handle, spheres, (b8 *)(framebuffer));
+        camera_ray_cast(camera_handle, spheres, framebuffer);
 
         [[maybe_unused]] bool _ = software_platform_submit_framebuffer(width, height, 
                 width * height * BYTES_PER_PIXEL, framebuffer);
