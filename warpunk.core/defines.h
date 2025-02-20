@@ -24,7 +24,6 @@ typedef float f32;
 typedef double f64;
 
 typedef u32 camera_handle_t;
-typedef void* thread_ticket_t;
 
 #if defined(__linux__)
     #define WARPUNK_LINUX

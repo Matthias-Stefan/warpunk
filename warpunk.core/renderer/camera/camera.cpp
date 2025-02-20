@@ -4,6 +4,7 @@
 #include "warpunk.core/math/v3.hpp"
 #include "warpunk.core/math/ray.hpp"
 #include "warpunk.core/math/hittable.hpp"
+#include "warpunk.core/renderer/materials/material.hpp"
 
 #include "warpunk.core/platform/platform.h"
 
@@ -79,13 +80,23 @@ camera_handle_t camera_create(camera_config_t camera_config)
     return camera_handle;
 }
 
+inline f64 linear_to_gamma(f64 linear_component)
+{
+    if (linear_component > 0)
+    {
+        return std::sqrt(linear_component);
+    }
+
+    return 0.0;
+}
+
 v3_t<u8> get_color_from_unit(const v3f64_t& vector)
 {
     v3_t<u8> color = {};
     static const interval_t<f64> intensity = { 0.000, 0.999 };
-    color.r = s32(256 * clamp(&intensity, vector.r));
-    color.g = s32(256 * clamp(&intensity, vector.g));
-    color.b = s32(256 * clamp(&intensity, vector.b));
+    color.r = s32(256 * clamp(&intensity, linear_to_gamma(vector.r)));
+    color.g = s32(256 * clamp(&intensity, linear_to_gamma(vector.g)));
+    color.b = s32(256 * clamp(&intensity, linear_to_gamma(vector.b)));
     
     return color;
 }
@@ -135,7 +146,7 @@ template<typename T>
 
     hit_record_t<T> record = {};
     bool hit_sphere = false;
-    for (int sphere_idx = 0; sphere_idx < 2; ++sphere_idx)
+    for (int sphere_idx = 0; sphere_idx < 4; ++sphere_idx)
     {
         sphere_t<f64>* sphere = &spheres[sphere_idx];
         if (hit(sphere, ray, { 0.001, inf64 }, &record))
@@ -147,9 +158,13 @@ template<typename T>
 
     if (hit_sphere)
     {
-        v3_t<T> direction = record.normal + random_unit_vector<T>();
-        ray_t<T> _ray = { record.pos, direction };
-        return 0.5 * ray_color(&_ray, spheres, depth-1);
+        ray_t<T> scattered;
+        v3_t<T> attenuation = zero<T>();
+        if (scatter(record.material, ray, &record, &attenuation, &scattered))
+        {
+            return attenuation * ray_color(&scattered, spheres, depth-1); 
+        }
+        return v3f64_t { 0.0, 0.0, 0.0 };
     }
 
 
@@ -189,7 +204,7 @@ void camera_ray_cast_chunk(void* data)
                 rayf64_t ray = get_ray<f64>(render_chunk->camera_handle, x, y);
                 unit_color += ray_color<f64>(&ray, spheres, camera->max_depth);
             }
-            
+
             v3_t<u8> color = get_color_from_unit(unit_color * camera->pixel_samples_scale);
             
             u8 alpha = 255;
@@ -198,9 +213,6 @@ void camera_ray_cast_chunk(void* data)
 
         row += camera->image_width * BYTES_PER_PIXEL;
     }
-    
-    int stop = 5;
-    (void)stop;
 }
 
 void camera_ray_cast(camera_handle_t camera_handle, void* objects, u8* out_buffer)
@@ -209,7 +221,6 @@ void camera_ray_cast(camera_handle_t camera_handle, void* objects, u8* out_buffe
     u8* row = out_buffer;
     camera_t* camera = &cameras[camera_handle];
 
-#if true
     s32 chunk_width = camera->image_width / 4;
     s32 chunk_height = camera->image_height / 4;
 
@@ -240,26 +251,4 @@ void camera_ray_cast(camera_handle_t camera_handle, void* objects, u8* out_buffe
     thread_ticket_t ticket;
     platform_threadpool_add(&job, 16, &ticket);
     platform_threadpool_sync(ticket, 0);
-#else
-    for (u16 y = 0; y < camera->image_height; ++y)
-    {
-        u32* pixel = (u32 *)row;
-        for (u16 x = 0; x < camera->image_width; ++x)
-        {
-            v3f64_t unit_color = zero<f64>();
-            for (int sample = 0; sample < camera->samples_per_pixel; ++sample)
-            {
-                rayf64_t ray = get_ray<f64>(camera_handle, x, y);
-                unit_color += ray_color<f64>(&ray, spheres, camera->max_depth);
-            }
-            
-            v3_t<u8> color = get_color_from_unit(unit_color * camera->pixel_samples_scale);
-            
-            u8 alpha = 255;
-            *pixel++ =((((alpha << 24) | color.r << 16) | color.g << 8) | color.b);
-        }
-
-        row += camera->image_width * BYTES_PER_PIXEL;
-    }
-#endif
 }

@@ -252,6 +252,18 @@ template<typename T>
     }
 }
 
+template<typename T>
+[[nodiscard]] b8 near_zero(const v3_t<T>& vector)
+{
+    auto s = 1e-8;
+    return (std::fabs(vector.x) < s) && (std::fabs(vector.y) < s) && (std::fabs(vector.z) < s);
+}
+
+template<typename T>
+[[nodiscard]] v3_t<T> reflect(const v3_t<T>& v1, const v3_t<T>& v2)
+{
+    return v1 - 2 * dot(v1, v2) * v2;
+}
 
 template<typename T>
 using p3_t = v3_t<T>;

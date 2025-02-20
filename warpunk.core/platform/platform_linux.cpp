@@ -22,9 +22,9 @@
 
 #include "warpunk.core/defines.h"
 #include "warpunk.core/input_system/input_types.h"
-#include "warpunk.core/container/dynarray.hpp"
+#include "warpunk.core/container/stcqueue.hpp"
 #include "warpunk.core/container/dynqueue.hpp"
-
+#include "warpunk.core/container/dynarray.hpp"
 
 //////////////////////////////////////////////////////////////////////
 
@@ -48,19 +48,24 @@
 #define PLATFORM_THREADPOOL_THREAD_COUNT 32
 
 [[nodiscard]] static keycode_t translate_keycode(const unsigned int key_code);
+static void* platform_thread_main_routine(void* args);
 
 //////////////////////////////////////////////////////////////////////
 
-typedef struct _linux_threading_job_t
+typedef struct _thread_handle_t
 {
-    pthread_t thread_id;
-    platform_threading_job_t job;
-} linux_threading_job_t;
+    thread_ticket_t ticket;
+    s32 thread_idx;
+} thread_handle_t;
 
-typedef struct _linux_threading_job_description_t
+typedef struct _thread_context_t
 {
-    dynarray_t<linux_threading_job_t> jobs; 
-} linux_threading_job_description_t;
+    dynarray_t<pthread_t> threads;
+    dynarray_t<platform_threading_job_t> jobs;
+    dynarray_t<thread_handle_t> handles;
+    s64 active_thread_count;
+    pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER; 
+} thread_context_t;
 
 typedef struct _linux_state_t
 {
@@ -68,9 +73,10 @@ typedef struct _linux_state_t
     xcb_screen_t* screen;
     linux_handle_info_t handle;
 
-    s32 next_job = 0;
-    dynarray_t<linux_threading_job_description_t> jobs = 
-        dynarray_create<linux_threading_job_description_t>(32);
+    pthread_mutex_t mutex;
+    b8 thread_ticket_free_list[64] = { true };
+    thread_context_t thread_contexts[64];
+
 
     platform_keyboard_event_t keyboard_event;
     platform_mouse_button_event_t mouse_button_event;
@@ -201,6 +207,9 @@ bool platform_startup()
     }
 
     xcb_flush(linux_state.handle.connection);
+
+    /** threading */
+    pthread_mutex_init(&linux_state.mutex, nullptr);
 
     return true;
 }
@@ -628,7 +637,10 @@ void platform_process_input()
 
     return true;
 }
-// MEMORY
+
+/************/
+/** memory **/
+/************/
 
 [[nodiscard]] void* platform_memory_alloc(s64 size)
 {
@@ -656,67 +668,101 @@ void platform_memory_zero(void* dst, s64 size)
     memset(dst, 0, size);
 }
 
-/** threading */ 
+/***************/
+/** threading **/
+/***************/
 
-static void* platform_threading_execute(void* args)
+static void* platform_thread_main_routine(void* args)
 {
-    linux_threading_job_t* linux_job = (linux_threading_job_t *)args;
-    linux_job->job.function(linux_job->job.arg);
+    thread_handle_t* handle = (thread_handle_t *)args;
+    thread_context_t* thread_context = &linux_state.thread_contexts[handle->ticket];
+    platform_threading_job_t* job = (platform_threading_job_t *)&thread_context->jobs.data[handle->thread_idx]; 
 
-    linux_job->job.function = nullptr;
-    platform_memory_free(linux_job->job.arg); 
-    linux_job->job.arg_size = 0;
+    if (job != nullptr && job->function != nullptr)
+    {
+        job->function(job->arg);
+        if (job->arg)
+        {
+            platform_memory_free(job->arg);
+            job->arg = nullptr;
+        }
+    }
 
+    pthread_mutex_lock(&thread_context->mutex);
+    thread_context->active_thread_count--;
+    if (thread_context->active_thread_count == 0)
+    {
+        dynarray_destroy(&thread_context->jobs);
+        linux_state.thread_ticket_free_list[handle->ticket] = true;
+        dynarray_destroy(&thread_context->handles);
+    }
+    pthread_mutex_unlock(&thread_context->mutex);
     return nullptr;
 }
 
-void platform_threadpool_add(platform_threading_job_t* chunk, u32 chunk_count, thread_ticket_t* out_ticket)
+void platform_threadpool_add(platform_threading_job_t* jobs, u32 chunk_count, thread_ticket_t* out_ticket)
 {
-    linux_threading_job_description_t* job_description = &linux_state.jobs.data[linux_state.next_job]; 
-    job_description->jobs = dynarray_create<linux_threading_job_t>(chunk_count);
-
-    for (s32 job_index = 0; job_index < chunk_count; ++job_index)
+    pthread_mutex_lock(&linux_state.mutex);
+    b8 found = false;
+    thread_ticket_t ticket_idx;
+    for (ticket_idx = 0; ticket_idx < 64; ++ticket_idx)
     {
-        linux_threading_job_t* linux_job = &job_description->jobs.data[job_index];
-        linux_job->job.function = chunk->function;
-        linux_job->job.arg_size = chunk->arg_size;
-        linux_job->job.arg = platform_memory_alloc(chunk->arg_size);
-        platform_memory_copy(linux_job->job.arg, ((u8 *)chunk->arg) + chunk->arg_size * job_index, chunk->arg_size);
-    
-        pthread_create(&linux_job->thread_id, 
-                nullptr, 
-                platform_threading_execute, 
-                (void *)linux_job);
+        if (linux_state.thread_ticket_free_list[ticket_idx] == true)
+        {
+            linux_state.thread_ticket_free_list[ticket_idx] = false;
+            found = true;
+            break;
+        }
+    }
+    if (found == false)
+    {
+        return;
     }
 
-    job_description->jobs.capacity = chunk_count;
-    *out_ticket = job_description; 
-}
+    *out_ticket = ticket_idx;
 
-[[nodiscard]] b8 platform_threadpool_cancel(thread_ticket_t ticket)
-{
-    return true;
+    thread_context_t* thread_context = &linux_state.thread_contexts[ticket_idx];
+    if (thread_context->threads.data == nullptr)
+    {
+        thread_context->threads = dynarray_create<pthread_t>(chunk_count);
+    }
+    dynarray_clear(&thread_context->threads);
+    thread_context->jobs = dynarray_create<platform_threading_job_t>(chunk_count);
+    thread_context->handles = dynarray_create<thread_handle_t>(chunk_count);
+    thread_context->active_thread_count = chunk_count;
+    
+    for (s32 job_idx = 0; job_idx < chunk_count; ++job_idx)
+    {
+        platform_threading_job_t job = {};
+        job.function = jobs->function;
+        job.arg_size = jobs->arg_size;
+        job.arg = platform_memory_alloc(jobs->arg_size);
+        platform_memory_copy(job.arg, ((u8 *)jobs->arg) + jobs->arg_size * job_idx, jobs->arg_size);
+        
+        dynarray_add(&thread_context->threads, {});
+        dynarray_add(&thread_context->jobs, job); 
+        dynarray_add(&thread_context->handles, { ticket_idx, job_idx });
+       
+        pthread_create(&thread_context->threads.data[job_idx], 
+                nullptr, 
+                platform_thread_main_routine,
+                &thread_context->handles.data[job_idx]);
+    }
+    pthread_mutex_unlock(&linux_state.mutex);
 }
-
+ 
 void platform_threadpool_sync(thread_ticket_t ticket, f64 cancellation_time)
 {
-    linux_threading_job_description_t* job_description = (linux_threading_job_description_t *)ticket;
-    for (s32 job_index = 0; job_index < job_description->jobs.capacity; ++job_index)
+    thread_context_t* thread_context = &linux_state.thread_contexts[ticket];
+    for (s32 thread_idx = 0; thread_idx < thread_context->threads.size; ++thread_idx)
     {
-        pthread_join(job_description->jobs.data[job_index].thread_id, nullptr);
+        pthread_join(thread_context->threads.data[thread_idx], nullptr);
     }
 }
 
-[[nodiscard]] s32 platform_threadpool_get_active_thread_count()
-{
-    return 0;
-}
-
-void platform_threadpool_dump_status()
-{
-}
-
-/** events */
+/************/
+/** events **/
+/************/
 
 void platform_register_keyboard_event(platform_keyboard_event_t callback)
 {

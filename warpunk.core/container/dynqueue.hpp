@@ -24,12 +24,12 @@ warpunk_api inline dynqueue_t<T> dynqueue_create(s64 size)
     }
 
     dynqueue_t<T> queue = {};
+    queue.size = size;
+    queue.capacity = 0;
     queue.data = (T *)platform_memory_alloc(sizeof(T) * size);
     platform_memory_zero(queue.data, sizeof(T) * size);
     queue.head = 0;
     queue.tail = 0;
-    queue.size = size;
-    queue.capacity = 0;
     return queue;
 }
 
@@ -38,11 +38,11 @@ template<typename T>
 warpunk_api inline void dynqueue_destroy(dynqueue_t<T>* queue)
 {
     platform_memory_free(queue->data);
+    queue->size = 0;
+    queue->capacity = 0;
     queue->data = nullptr;
     queue->head = 0;
     queue->tail = 0;
-    queue->size = 0;
-    queue->capacity = 0;
 }
 
 /** */
@@ -106,4 +106,20 @@ warpunk_api inline void dynqueue_clear(dynqueue_t<T>* queue)
     queue->capacity = 0;
     queue->head = 0;
     queue->tail = 0;
+}
+
+/** */
+template<typename T>
+warpunk_api inline T* dynqueue_first(dynqueue_t<T>* queue, s64 offset=0)
+{
+    s64 index = (queue->head + offset) % queue->size;
+    return &queue->data[index];
+}
+
+/** */
+template<typename T>
+warpunk_api inline T* dynqueue_last(dynqueue_t<T>* queue, s64 offset=0)
+{
+    s64 index = (queue->head + queue->capacity - 1 + offset) % queue->size;
+    return &queue->data[index];
 }

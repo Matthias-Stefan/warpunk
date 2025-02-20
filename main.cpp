@@ -33,7 +33,7 @@ int main()
     // Renderer
     renderer_config_t renderer_config = {};
     renderer_config.type = RENDERER_TYPE_SOFTWARE;
-    renderer_config.width = 1920;
+    renderer_config.width = 1920 / 2;
     renderer_config.aspect_ratio = 16.0 / 9.0; 
     if (!renderer_startup(renderer_config))
     {

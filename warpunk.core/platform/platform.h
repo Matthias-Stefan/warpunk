@@ -72,7 +72,9 @@ warpunk_api [[nodiscard]] b8 platform_set_window_mode(platform_window_mode_t pla
 /** */
 warpunk_api [[nodiscard]] b8 platform_get_window_info(platform_window_info_t* platform_window_info);
 
-// MEMORY
+/** ------ */
+/** memory */
+/** ------ */
 
 /** */
 warpunk_api [[nodiscard]] void* platform_memory_alloc(s64 size);
@@ -89,10 +91,11 @@ warpunk_api void platform_memory_set(void* dst, s64 size, s32 value);
 /** */
 warpunk_api void platform_memory_zero(void* dst, s64 size);
 
-
 /** --------- */
 /** threading */
 /** --------- */
+
+typedef u32 thread_ticket_t;
 
 typedef struct _platform_threading_job_t
 {
@@ -103,26 +106,15 @@ typedef struct _platform_threading_job_t
 
 /** */
 warpunk_api void 
-platform_threadpool_add(platform_threading_job_t* chunk, u32 chunk_count, thread_ticket_t* out_ticket);
-
-/** */
-warpunk_api [[nodiscard]] b8
-platform_threadpool_cancel(thread_ticket_t ticket);
+platform_threadpool_add(platform_threading_job_t* jobs, u32 chunk_count, thread_ticket_t* out_ticket);
 
 /** */
 warpunk_api void
 platform_threadpool_sync(thread_ticket_t ticket, f64 cancellation_time);
 
-/** */
-warpunk_api [[nodiscard]] s32
-platform_threadpool_get_active_thread_count();
-
-/** */
-warpunk_api void
-platform_threadpool_dump_status();
-
-
+/** ------ */
 /** events */
+/** ------ */
 
 /** */
 typedef void (*platform_keyboard_event_t)(keycode_t keycode, b8 pressed);
