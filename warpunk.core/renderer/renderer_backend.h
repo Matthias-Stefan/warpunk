@@ -31,13 +31,13 @@ warpunk_api void renderer_begin_frame();
 warpunk_api void renderer_end_frame();
 
 /** */
-warpunk_api [[nodiscard]] buffer_handle_t renderer_create_buffer(s32 size, void* data);
+warpunk_api buffer_handle_t renderer_create_buffer(s32 size, void* data);
 
 /** */
 warpunk_api void renderer_destroy_buffer(buffer_handle_t buffer_handle);
 
 /** */
-warpunk_api [[nodiscard]] texture_handle_t renderer_create_texture(s32 width, s32 height, void* data);
+warpunk_api texture_handle_t renderer_create_texture(s32 width, s32 height, void* data);
 
 /** */
 warpunk_api void renderer_destroy_texture(texture_handle_t texture_handle);

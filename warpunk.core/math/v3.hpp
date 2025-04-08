@@ -105,7 +105,7 @@ v3_t<T> operator/(const v3_t<T>& vector, f64 t)
 }
 
 template<typename T>
-[[nodiscard]] T length_squared(const v3_t<T>& vector)
+T length_squared(const v3_t<T>& vector)
 {
     return vector.x * vector.x + 
            vector.y * vector.y + 
@@ -113,13 +113,13 @@ template<typename T>
 }
 
 template<typename T>
-[[nodiscard]] T length(const v3_t<T>& vector)
+T length(const v3_t<T>& vector)
 {
     return std::sqrt(length_squared(vector));
 }
 
 template<typename T>
-[[nodiscard]] f64 dot(const v3_t<T>& v1, const v3_t<T>& v2)
+f64 dot(const v3_t<T>& v1, const v3_t<T>& v2)
 {
     return v1.x * v2.x +
            v1.y * v2.y +
@@ -127,7 +127,7 @@ template<typename T>
 }
 
 template<typename T>
-[[nodiscard]] v3_t<T> cross(const v3_t<T>& v1, const v3_t<T>& v2)
+v3_t<T> cross(const v3_t<T>& v1, const v3_t<T>& v2)
 {
     return v3_t<T> { .x = v1.y * v2.z - v1.z * v2.y,
                      .y = v1.z * v2.x - v1.x * v2.z,
@@ -135,14 +135,14 @@ template<typename T>
 }
 
 template<typename T> 
-[[nodiscard]] inline v3_t<T> zero() = delete;
+inline v3_t<T> zero() = delete;
 
 template<typename T, typename std::enable_if_t<
     std::is_same_v<T, s8> ||
     std::is_same_v<T, s16> ||
     std::is_same_v<T, s32> ||
     std::is_same_v<T, s64>, int> = 0>
-[[nodiscard]] inline v3_t<T> zero()
+inline v3_t<T> zero()
 {
     return v3_t<T> { .x = 0, 
                      .y = 0,
@@ -150,7 +150,7 @@ template<typename T, typename std::enable_if_t<
 }
 
 template<>
-[[nodiscard]] inline v3_t<f32> zero()
+inline v3_t<f32> zero()
 {
     return v3_t<f32> { .x = 0.0f,
                        .y = 0.0f,
@@ -158,7 +158,7 @@ template<>
 }
 
 template<>
-[[nodiscard]] inline v3_t<f64> zero()
+inline v3_t<f64> zero()
 {
     return v3_t<f64> { .x = 0.0,
                        .y = 0.0,
@@ -166,7 +166,7 @@ template<>
 }
 
 template<typename T> 
-[[nodiscard]] inline v3_t<T> random_vector()
+inline v3_t<T> random_vector()
 {
     if constexpr (std::is_same_v<T, f32> || std::is_same_v<T, f64>)
     {
@@ -186,7 +186,7 @@ template<typename T>
 }
 
 template<typename T> 
-[[nodiscard]] inline v3_t<T> random_vector(T low, T high)
+inline v3_t<T> random_vector(T low, T high)
 {
     if constexpr (std::is_same_v<T, f32> || std::is_same_v<T, f64>)
     {
@@ -206,7 +206,7 @@ template<typename T>
 }
 
 template<typename T> 
-[[nodiscard]] inline v3_t<T> random_vector01()
+inline v3_t<T> random_vector01()
 {
     if constexpr (std::is_same_v<T, f32> || std::is_same_v<T, f64>)
     {
@@ -219,13 +219,13 @@ template<typename T>
 }
 
 template<typename T>
-[[nodiscard]] inline v3_t<T> unit_vector(const v3_t<T>& vector)
+inline v3_t<T> unit_vector(const v3_t<T>& vector)
 {
     return vector / length(vector);
 }
 
 template<typename T>
-[[nodiscard]] inline v3_t<T> random_unit_vector()
+inline v3_t<T> random_unit_vector()
 {
     while (true)
     {
@@ -239,7 +239,7 @@ template<typename T>
 }
 
 template<typename T>
-[[nodiscard]] inline v3_t<T> random_on_hemisphere(const v3_t<T> normal)
+inline v3_t<T> random_on_hemisphere(const v3_t<T> normal)
 {
     v3_t<T> on_unit_sphere = random_unit_vector<T>();
     if (dot(on_unit_sphere, normal) > 0)
@@ -253,20 +253,20 @@ template<typename T>
 }
 
 template<typename T>
-[[nodiscard]] b8 near_zero(const v3_t<T>& vector)
+b8 near_zero(const v3_t<T>& vector)
 {
     auto s = 1e-8;
     return (std::fabs(vector.x) < s) && (std::fabs(vector.y) < s) && (std::fabs(vector.z) < s);
 }
 
 template<typename T>
-[[nodiscard]] v3_t<T> reflect(const v3_t<T>& v1, const v3_t<T>& v2)
+v3_t<T> reflect(const v3_t<T>& v1, const v3_t<T>& v2)
 {
     return v1 - 2 * dot(v1, v2) * v2;
 }
 
 template<typename T>
-[[nodiscard]] v3_t<T> refract(const v3_t<T>& uv, const v3_t<T>& n, f64 etai_over_etat)
+v3_t<T> refract(const v3_t<T>& uv, const v3_t<T>& n, f64 etai_over_etat)
 {
     auto cos_theta = std::fmin(dot(-uv, n), 1.0);
     v3_t<T> r_out_perp = etai_over_etat * (uv + cos_theta * n);

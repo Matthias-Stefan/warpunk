@@ -1,3 +1,5 @@
+#if defined(WARPUNK_LINUX)
+
 #include "warpunk.core/platform/platform.h"
 #include "warpunk.core/platform/platform_linux.h"
 
@@ -47,7 +49,7 @@
 
 #define PLATFORM_THREADPOOL_THREAD_COUNT 32
 
-[[nodiscard]] static keycode_t translate_keycode(const unsigned int key_code);
+static keycode_t translate_keycode(const unsigned int key_code);
 static void* platform_thread_main_routine(void* args);
 
 //////////////////////////////////////////////////////////////////////
@@ -92,7 +94,7 @@ static linux_state_t linux_state;
 
 //////////////////////////////////////////////////////////////////////
 
-[[nodiscard]] static const char* platform_get_error_name(uint8_t error_code)
+static const char* platform_get_error_name(uint8_t error_code)
 {
     switch (error_code) 
     {
@@ -118,7 +120,7 @@ static linux_state_t linux_state;
     return "";
 }
 
-[[nodiscard]] b8 platform_result_is_success(xcb_void_cookie_t cookie)
+b8 platform_result_is_success(xcb_void_cookie_t cookie)
 {
     xcb_generic_error_t* error = xcb_request_check(linux_state.handle.connection, cookie);
     if (error != NULL)
@@ -130,7 +132,7 @@ static linux_state_t linux_state;
     return true;
 }
 
-[[nodiscard]] xcb_atom_t platform_get_atom(const char* name)
+xcb_atom_t platform_get_atom(const char* name)
 {
     xcb_intern_atom_cookie_t cookie = xcb_intern_atom(linux_state.handle.connection, 0, strlen(name), name);
     xcb_intern_atom_reply_t* reply = xcb_intern_atom_reply(linux_state.handle.connection, cookie, NULL);
@@ -371,7 +373,7 @@ void platform_process_input()
     }
 }
 
-[[nodiscard]] b8 platform_get_window_handle(s32* out_size, void* out_platform_handle)
+b8 platform_get_window_handle(s32* out_size, void* out_platform_handle)
 {
     *out_size = sizeof(linux_handle_info_t);
     if (!out_platform_handle)
@@ -384,7 +386,7 @@ void platform_process_input()
     return true;
 }
 
-[[nodiscard]] b8 platform_load_library(const char* path, library_context_t* out_library_context)
+b8 platform_load_library(const char* path, library_context_t* out_library_context)
 {
     void* library_handle = dlopen(path, RTLD_NOW);
     if (!library_handle)
@@ -397,7 +399,7 @@ void platform_process_input()
     return true;
 }
 
-[[nodiscard]] b8 platform_unload_library(library_context_t* library_context)
+b8 platform_unload_library(library_context_t* library_context)
 {
     if (dlclose(library_context->handle) != 0)
     {
@@ -416,7 +418,7 @@ void platform_process_input()
     return true;
 }
 
-[[nodiscard]] b8 platform_get_function(library_context_t* library_context, function_description_t* out_function_description)
+b8 platform_get_function(library_context_t* library_context, function_description_t* out_function_description)
 {
     out_function_description->function = dlsym(library_context->handle, out_function_description->name);
     if (!out_function_description->function)
@@ -434,7 +436,7 @@ void platform_process_input()
     return true; 
 }
 
-[[nodiscard]] b8 platform_is_mouse_inside_window()
+b8 platform_is_mouse_inside_window()
 {
     xcb_connection_t* connection = linux_state.handle.connection;
     xcb_window_t window = linux_state.handle.window;
@@ -468,7 +470,7 @@ void platform_process_input()
     return inside;
 }
 
-[[nodiscard]] b8 platform_set_window_mode(platform_window_mode_t platform_window_mode)
+b8 platform_set_window_mode(platform_window_mode_t platform_window_mode)
 {
     xcb_connection_t* connection = linux_state.handle.connection;
     xcb_window_t window = linux_state.handle.window;
@@ -525,7 +527,7 @@ void platform_process_input()
     return true;
 }
 
-[[nodiscard]] b8 platform_get_window_info(platform_window_info_t* platform_window_info)
+b8 platform_get_window_info(platform_window_info_t* platform_window_info)
 {
     if (!platform_window_info)
     {
@@ -642,7 +644,7 @@ void platform_process_input()
 /** memory **/
 /************/
 
-[[nodiscard]] void* platform_memory_alloc(s64 size)
+void* platform_memory_alloc(s64 size)
 {
     void* memory = aligned_alloc(16, size);
     return memory;
@@ -784,7 +786,7 @@ void platform_register_mouse_wheel_event(platform_mouse_wheel_event_t callback)
     linux_state.mouse_wheel_event = callback;
 }
 
-[[nodiscard]] static keycode_t translate_keycode(const unsigned int key_code)
+static keycode_t translate_keycode(const unsigned int key_code)
 {
     switch (key_code)
     {
@@ -1015,3 +1017,4 @@ void platform_register_mouse_wheel_event(platform_mouse_wheel_event_t callback)
     }
 }
 
+#endif // WARPUNK_LINUX

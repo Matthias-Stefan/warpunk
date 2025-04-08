@@ -17,7 +17,7 @@ typedef struct _renderer_api_t
 
 static renderer_api_t renderer_api; 
 
-[[nodiscard]] b8 renderer_startup(renderer_config_t renderer_config)
+b8 renderer_startup(renderer_config_t renderer_config)
 {
     switch (renderer_config.type)
     {

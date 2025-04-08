@@ -102,7 +102,7 @@ v3_t<u8> get_color_from_unit(const v3f64_t& vector)
 }
 
 template<typename T>
-[[nodiscard]] inline v3_t<T> sample_square()
+inline v3_t<T> sample_square()
 {
     v3_t<T> v3 = { .x = randreal01<f64>() - 0.5,
                    .y = randreal01<f64>() - 0.5, 
@@ -111,7 +111,7 @@ template<typename T>
 }
 
 template<typename T>
-[[nodiscard]] inline ray_t<T> get_ray(camera_handle_t camera_handle, s32 x, s32 y)
+inline ray_t<T> get_ray(camera_handle_t camera_handle, s32 x, s32 y)
 {
     /** 
      * construct a camera ray originating from the origin and directed at randomly sampled
@@ -135,7 +135,7 @@ template<typename T>
 }
 
 template<typename T>
-[[nodiscard]] v3f64_t ray_color(ray_t<T>* ray, sphere_t<T>* spheres, s32 depth)
+v3f64_t ray_color(ray_t<T>* ray, sphere_t<T>* spheres, s32 depth)
 {
     if (depth <= 0)
     {

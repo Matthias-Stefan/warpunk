@@ -25,7 +25,7 @@ static sphere_t<f64> spheres[4];
 
 namespace software_renderer
 {
-    [[nodiscard]] b8 renderer_startup(renderer_config_t renderer_config)
+    b8 renderer_startup(renderer_config_t renderer_config)
     {
         if (!software_platform_startup())
         {

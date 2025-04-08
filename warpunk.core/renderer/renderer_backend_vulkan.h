@@ -18,13 +18,13 @@ namespace vulkan_renderer
     void renderer_end_frame();
 
     /** */
-    [[nodiscard]] buffer_handle_t renderer_create_buffer(s32 size, void* data);
+    buffer_handle_t renderer_create_buffer(s32 size, void* data);
 
     /** */
     void renderer_destroy_buffer(buffer_handle_t buffer_handle);
 
     /** */
-    [[nodiscard]] texture_handle_t renderer_create_texture(s32 width, s32 height, void* data);
+    texture_handle_t renderer_create_texture(s32 width, s32 height, void* data);
 
     /** */
     void renderer_destroy_texture(texture_handle_t texture_handle);

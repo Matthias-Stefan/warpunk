@@ -1,6 +1,6 @@
 #include "warpunk.core/renderer/renderer_backend.h"
 
-#include <vulkan.h>
+#include <vulkan/vulkan.h>
 
 typedef struct  _vulkan_state_t
 {
@@ -19,12 +19,12 @@ static const char* engine_name = "warpunk";
 
 namespace vulkan_renderer
 {
-    [[nodiscard]] b8 vulkan_eval_result(VkResult vk_result)
+    b8 vulkan_eval_result(VkResult vk_result)
     {
         return vk_result == VK_SUCCESS;
     }
 
-    [[nodiscard]] b8 renderer_startup(renderer_config_t renderer_config)
+    b8 renderer_startup(renderer_config_t renderer_config)
     {
         if (state.is_initialized)
         {

@@ -1,8 +1,15 @@
 {
     "tasks": [
         {
-            "type": "cppbuild",
-            "label": "C/C++: gcc build active file",
+            "type": "shell",
+            "label": "Build",
+            "windows": {
+                "command": "${workspaceFolder}/build-debug.bat"
+            },
+            "linux": {
+                "command": "${workspaceFolder}/build-debug.sh"
+            },
+
             "command": "/usr/bin/gcc",
             "args": [
                 "-fdiagnostics-color=always",

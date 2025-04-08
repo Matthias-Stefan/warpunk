@@ -38,11 +38,11 @@ inline void set_face_normal(hit_record_t<T>* hit_record, const ray_t<T>* ray, co
 }
 
 template<typename S, typename T, typename std::enable_if<!std::is_same<S, sphere_t<T>>::value>::type* = nullptr>
-[[nodiscard]] inline b8 hit(const S* object, ray_t<T>* ray, interval_t<T> interval, hit_record_t<T>* out_hit_record) = delete;
+inline b8 hit(const S* object, ray_t<T>* ray, interval_t<T> interval, hit_record_t<T>* out_hit_record) = delete;
 
 /** */
 template<typename S, typename T, typename std::enable_if<std::is_same<S, sphere_t<T>>::value>::type* = nullptr>
-[[nodiscard]] inline b8 hit(const S* sphere, ray_t<T>* ray, interval_t<T> interval, hit_record_t<T>* out_hit_record)
+inline b8 hit(const S* sphere, ray_t<T>* ray, interval_t<T> interval, hit_record_t<T>* out_hit_record)
 {
     v3f64_t oc = sphere->center - ray->origin;
     auto a = length_squared(ray->dir);

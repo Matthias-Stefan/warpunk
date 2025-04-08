@@ -52,32 +52,32 @@ void platform_shutdown();
 void platform_process_input();   
 
 /** */
-[[nodiscard]] b8 platform_get_window_handle(s32* size, void* platform_handle);
+b8 platform_get_window_handle(s32* size, void* platform_handle);
 
 //* */
-warpunk_api [[nodiscard]] b8 platform_load_library(const char* path, library_context_t* out_library_context);
+warpunk_api b8 platform_load_library(const char* path, library_context_t* out_library_context);
 
 //* */
-warpunk_api [[nodiscard]] b8 platform_unload_library(library_context_t* library_context);
+warpunk_api b8 platform_unload_library(library_context_t* library_context);
 
 //* */
-warpunk_api [[nodiscard]] b8 platform_get_function(library_context_t* library_context, function_description_t* out_function_description);
+warpunk_api b8 platform_get_function(library_context_t* library_context, function_description_t* out_function_description);
 
 /** */
-warpunk_api [[nodiscard]] b8 platform_is_mouse_inside_window();
+warpunk_api b8 platform_is_mouse_inside_window();
 
 /** */
-warpunk_api [[nodiscard]] b8 platform_set_window_mode(platform_window_mode_t platform_window_mode);
+warpunk_api b8 platform_set_window_mode(platform_window_mode_t platform_window_mode);
 
 /** */
-warpunk_api [[nodiscard]] b8 platform_get_window_info(platform_window_info_t* platform_window_info);
+warpunk_api b8 platform_get_window_info(platform_window_info_t* platform_window_info);
 
 /** ------ */
 /** memory */
 /** ------ */
 
 /** */
-warpunk_api [[nodiscard]] void* platform_memory_alloc(s64 size);
+warpunk_api  void* platform_memory_alloc(s64 size);
 
 /** */
 warpunk_api void platform_memory_free(void* src);

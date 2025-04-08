@@ -1,4 +1,5 @@
 #pragma once
+#if defined(WARPUNK_LINUX)
 
 #include "warpunk.core/defines.h"
 
@@ -10,5 +11,6 @@ typedef struct _linux_handle_info_t
     xcb_window_t window;
 } linux_handle_info_t;
 
-[[nodiscard]] b8 platform_result_is_success(xcb_void_cookie_t cookie);
+b8 platform_result_is_success(xcb_void_cookie_t cookie);
 
+#endif // WARPUNK_LINUX

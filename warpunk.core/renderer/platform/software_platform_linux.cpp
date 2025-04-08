@@ -1,3 +1,5 @@
+#if defined(WARPUNK_LINUX)
+
 #include "warpunk.core/renderer/platform/software_platform.h"
 
 #include <stdlib.h>
@@ -9,7 +11,7 @@ linux_handle_info_t* handle;
 xcb_pixmap_t pixmap;
 xcb_gcontext_t gcontext;
 
-[[nodiscard]] b8 software_platform_startup()
+b8 software_platform_startup()
 {
     if (!handle)
     {
@@ -40,7 +42,7 @@ xcb_gcontext_t gcontext;
     return true;
 }
 
-[[nodiscard]] b8 software_platform_submit_framebuffer(s32 width, s32 height, s32 size, u8* framebuffer)
+b8 software_platform_submit_framebuffer(s32 width, s32 height, s32 size, u8* framebuffer)
 {
     if (!handle)
     {
@@ -83,3 +85,5 @@ xcb_gcontext_t gcontext;
     xcb_free_pixmap(handle->connection, pixmap);
     return true;
 }
+
+#endif // WARPUNK_LINUX
