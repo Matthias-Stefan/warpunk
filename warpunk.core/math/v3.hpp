@@ -266,6 +266,15 @@ template<typename T>
 }
 
 template<typename T>
+[[nodiscard]] v3_t<T> refract(const v3_t<T>& uv, const v3_t<T>& n, f64 etai_over_etat)
+{
+    auto cos_theta = std::fmin(dot(-uv, n), 1.0);
+    v3_t<T> r_out_perp = etai_over_etat * (uv + cos_theta * n);
+    v3_t<T> r_out_parallel = -std::sqrt(std::fabs(1.0 - length_squared(r_out_perp))) * n;
+    return r_out_perp + r_out_parallel;
+}
+
+template<typename T>
 using p3_t = v3_t<T>;
 
 using v3f32_t = v3_t<f32>;

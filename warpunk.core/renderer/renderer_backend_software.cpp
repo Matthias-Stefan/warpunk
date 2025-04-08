@@ -14,10 +14,11 @@ static s32 width;
 static s32 height;
 
 static material_t<f64> metal1 = { .type = METAL, .albedo = { 0.8, 0.8, 0.8 } };
-static material_t<f64> metal2 = { .type = METAL, .albedo = { 0.8, 0.6, 0.2 } };
+static material_t<f64> metal2 = { .type = METAL, .fuzz = 0.66, .albedo = { 0.8, 0.6, 0.2 } };
 static material_t<f64> metal3 = { .type = METAL, .fuzz = 0.33, .albedo = { 0.33, 0.33, 0.33 } };
 static material_t<f64> lambert1 = { .type = LAMBERT, .albedo = { 0.8, 0.8, 0.0 } };
 static material_t<f64> lambert2 = { .type = LAMBERT, .albedo = { 0.1, 0.2, 0.5 } };
+static material_t<f64> dielectric1 = { .type = DIELECTRIC, .refraction_index=(1.00 / 1.33) };
 
 static sphere_t<f64> spheres[4];
 
@@ -49,7 +50,7 @@ namespace software_renderer
         /** spheres */
         spheres[0] = { .center = {  0.0,    0.0, -1.2 }, .radius =   0.5, .material = &lambert2 };
         spheres[1] = { .center = { -1.0,    0.0, -1.0 }, .radius =   0.5, .material = &metal1 };
-        spheres[2] = { .center = {  1.0,    0.0, -1.0 }, .radius =   0.5, .material = &metal2 };
+        spheres[2] = { .center = {  1.0,    0.0, -1.0 }, .radius =   0.5, .material = &dielectric1 };
         spheres[3] = { .center = {  0.0, -100.5, -1.0 }, .radius = 100.0, .material = &metal3 };
 
         return true;
