@@ -1,7 +1,8 @@
 #pragma once
-#if defined(WARPUNK_LINUX)
 
 #include "warpunk.core/defines.h"
+
+#if defined(WARPUNK_LINUX)
 
 #include <X11/Xlib-xcb.h>
 

@@ -1,16 +1,11 @@
-#if false
 #include <stdio.h>
 #include <stdlib.h>
-#if false
 #include <dlfcn.h>
 #include <unistd.h>
-#endif
 
 #include "warpunk.core/platform/platform.h"
 #include "warpunk.core/input_system/input_system.h"
 #include "warpunk.core/renderer/renderer_backend.h"
-
-#include "warpunk.core/container/dynarray.hpp"
 
 //////////////////////////////////////////////////////////////////////
 
@@ -77,7 +72,7 @@ int main()
     game_tick_t game_tick = (game_tick_t)game_tick_desc.function;
     
     // Main lopp
-    while (true)set "CXXFLAGS=... -DVK_DISABLE_VIDEO"
+    while (true)
 
     {
         platform_process_input();
@@ -89,11 +84,5 @@ int main()
         usleep(16667);
     }
     
-    return 0;
-}
-#endif 
-
-int main()
-{
     return 0;
 }

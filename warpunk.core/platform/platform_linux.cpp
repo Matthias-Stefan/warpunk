@@ -1,4 +1,5 @@
-#if defined(WARPUNK_LINUX)
+#include "warpunk.core/defines.h"
+#if defined(WARPUNK_LINUX) 
 
 #include "warpunk.core/platform/platform.h"
 #include "warpunk.core/platform/platform_linux.h"
@@ -22,7 +23,6 @@
 #include <X11/keysym.h>
 #include <X11/keysymdef.h>
 
-#include "warpunk.core/defines.h"
 #include "warpunk.core/input_system/input_types.h"
 #include "warpunk.core/container/stcqueue.hpp"
 #include "warpunk.core/container/dynqueue.hpp"

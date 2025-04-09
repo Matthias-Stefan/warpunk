@@ -1,3 +1,4 @@
+#include "warpunk.core/defines.h"
 #if defined(WARPUNK_LINUX)
 
 #include "warpunk.core/renderer/platform/software_platform.h"
