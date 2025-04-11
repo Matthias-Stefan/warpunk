@@ -132,6 +132,32 @@ b8 platform_result_is_success(xcb_void_cookie_t cookie)
     return true;
 }
 
+b8 platform_linux_get_connection(xcb_connection_t **out_connection)
+{
+    if (linux_state.handle.connection == nullptr)
+    {
+        fprintf(stderr, "Failed to provide connection");
+        *out_connection = nullptr;
+        return false;
+    }
+
+    *out_connection = linux_state.handle.connection;
+    return true;
+}
+
+b8 platform_linux_get_window(xcb_window_t *out_window)
+{
+    if (linux_state.handle.window == 0)
+    {
+        fprintf(stderr, "Failed to provide window");
+        *out_window = 0;
+        return false;
+    }
+
+    *out_window = linux_state.handle.window;
+    return true;
+}
+
 xcb_atom_t platform_get_atom(const char* name)
 {
     xcb_intern_atom_cookie_t cookie = xcb_intern_atom(linux_state.handle.connection, 0, strlen(name), name);
