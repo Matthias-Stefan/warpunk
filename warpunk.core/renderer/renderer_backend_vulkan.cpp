@@ -57,7 +57,17 @@ namespace vulkan_renderer
         }
        
         /** begin instance */
+        u32 instance_extension_count = 0;
+        vulkan_platform_get_required_instance_extensions(&instance_extension_count, nullptr);
+        dynarray_t<const char *> instance_extensions = dynarray_create<const char *>(instance_extension_count);
+        vulkan_platform_get_required_instance_extensions(&instance_extension_count, &instance_extensions.data);
 
+#if WARPUNK_DEBUG
+        instance_extensions.capacity = instance_extension_count; 
+        instance_extension_count += 1;
+        dynarray_add(&instance_extensions, "VK_EXT_debug_utils");
+#endif
+        
         VkApplicationInfo application_info = {};
         application_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
         application_info.pApplicationName = application_name;
@@ -71,10 +81,8 @@ namespace vulkan_renderer
         instance_create_info.pApplicationInfo = &application_info;
         instance_create_info.enabledLayerCount = 0;
         instance_create_info.ppEnabledLayerNames = nullptr;
-        
-        const char* extension = "VK_KHR_xcb_surface";
-        instance_create_info.enabledExtensionCount = 1;
-        instance_create_info.ppEnabledExtensionNames = &extension;
+        instance_create_info.enabledExtensionCount = instance_extension_count;
+        instance_create_info.ppEnabledExtensionNames = instance_extensions.data;
 
         /** begin validation layers */
 
@@ -97,13 +105,15 @@ namespace vulkan_renderer
         }
 
         vulkan_eval_result(vkCreateInstance(&instance_create_info, nullptr, &state.instance));
+        dynarray_destroy(&instance_extensions);
         dynarray_destroy(&validation_layers);
 
         /** begin surface */
 
         if (!vulkan_platform_create_surface(state.instance, &state.allocator, &state.surface))
         {
-
+            fprintf(stderr, "Failed to create surface");
+            return false;
         }
         
         /** begin pick physical device */

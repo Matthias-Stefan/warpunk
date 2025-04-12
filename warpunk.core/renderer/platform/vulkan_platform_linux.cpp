@@ -6,6 +6,7 @@
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_xcb.h>
 
+#include "warpunk.core/platform/platform.h"
 #include "warpunk.core/platform/platform_linux.h"
 #include "warpunk.core/renderer/renderer_backend_vulkan_types.h"
 
@@ -30,12 +31,28 @@ namespace vulkan_renderer
         xcb_surface_create_info.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
         xcb_surface_create_info.pNext = NULL;
         xcb_surface_create_info.flags = 0;
-        xcb_surface_create_info.window = window;y
+        xcb_surface_create_info.window = window;
         xcb_surface_create_info.connection = connection;
 
         vulkan_eval_result(vkCreateXcbSurfaceKHR(instance, &xcb_surface_create_info, nullptr, surface));
 
         return true;
+    }
+
+    b8 vulkan_platform_get_required_instance_extensions(u32 *extension_count, const char ***extensions)
+    {
+        const char* instance_extensions[] = {
+            "VK_KHR_surface",
+            "VK_KHR_xcb_surface"
+        };
+
+        *extension_count = 2;
+        if (extensions != nullptr)
+        {
+            platform_memory_copy(*extensions, instance_extensions, sizeof(instance_extensions)); 
+        }
+
+        return true; 
     }
 }
 
