@@ -8,32 +8,34 @@
 #include "warpunk.core/platform/platform.h"
 #include "warpunk.core/platform/platform_linux.h"
 
-linux_handle_info_t* handle;
+linux_handle_s handle;
 xcb_pixmap_t pixmap;
 xcb_gcontext_t gcontext;
 
 b8 software_platform_startup()
 {
-    if (!handle)
+    if (handle.connection == nullptr)
     {
-       // TODO: Platform allocation!
-        handle = (linux_handle_info_t *)malloc(sizeof(linux_handle_info_t));
+        if (!platform_get_linux_handle(&handle))
+        {
+            return false;
+        }
     }
     
     s32 size;
-    if (!platform_get_window_handle(&size, handle))
+    if (!platform_get_window_handle(&size, &handle))
     {
         return false;
     }
 
-    uint64_t max_req_len = xcb_get_maximum_request_length(handle->connection);
+    uint64_t max_req_len = xcb_get_maximum_request_length(handle.connection);
 
-    xcb_screen_t* screen = xcb_setup_roots_iterator(xcb_get_setup(handle->connection)).data;
-    gcontext = xcb_generate_id(handle->connection);
+    xcb_screen_t* screen = xcb_setup_roots_iterator(xcb_get_setup(handle.connection)).data;
+    gcontext = xcb_generate_id(handle.connection);
     if (!platform_result_is_success(xcb_create_gc(
-                    handle->connection, 
+                    handle.connection, 
                     gcontext, 
-                    handle->window, 
+                    handle.window, 
                     0, 
                     0)))
     {
@@ -45,16 +47,16 @@ b8 software_platform_startup()
 
 b8 software_platform_submit_framebuffer(s32 width, s32 height, s32 size, u8* framebuffer)
 {
-    if (!handle)
+    if (handle.connection == nullptr)
     {
         return false;
     }
 
-    pixmap = xcb_generate_id(handle->connection);
-    xcb_create_pixmap(handle->connection, 24, pixmap, handle->window, width, height);
+    pixmap = xcb_generate_id(handle.connection) ;
+    xcb_create_pixmap(handle.connection, 24, pixmap, handle.window, width, height);
 
     if (!platform_result_is_success(xcb_put_image(
-                    handle->connection, 
+                    handle.connection, 
                     XCB_IMAGE_FORMAT_Z_PIXMAP, 
                     pixmap,
                     gcontext, 
@@ -69,9 +71,9 @@ b8 software_platform_submit_framebuffer(s32 width, s32 height, s32 size, u8* fra
     }
 
     if (!platform_result_is_success(xcb_copy_area(
-                    handle->connection,
+                    handle.connection,
                     pixmap,
-                    handle->window,
+                    handle.window,
                     gcontext,
                     0, 0, 0, 0,
                     width,
@@ -81,9 +83,9 @@ b8 software_platform_submit_framebuffer(s32 width, s32 height, s32 size, u8* fra
         return false;
     }
 
-    xcb_flush(handle->connection);
+    xcb_flush(handle.connection);
 
-    xcb_free_pixmap(handle->connection, pixmap);
+    xcb_free_pixmap(handle.connection, pixmap);
     return true;
 }
 

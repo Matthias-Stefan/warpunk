@@ -19,10 +19,8 @@ namespace vulkan_renderer
             return false;
         }
 
-        xcb_connection_t* connection = nullptr;
-        xcb_window_t window = 0;
-
-        if (!platform_linux_get_connection(&connection) || !platform_linux_get_window(&window))
+        linux_handle_s platform_handle;
+        if (!platform_get_linux_handle(&platform_handle))
         {
             return false;
         }
@@ -31,8 +29,8 @@ namespace vulkan_renderer
         xcb_surface_create_info.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
         xcb_surface_create_info.pNext = NULL;
         xcb_surface_create_info.flags = 0;
-        xcb_surface_create_info.window = window;
-        xcb_surface_create_info.connection = connection;
+        xcb_surface_create_info.window = platform_handle.window;
+        xcb_surface_create_info.connection = platform_handle.connection;
 
         vulkan_eval_result(vkCreateXcbSurfaceKHR(instance, &xcb_surface_create_info, nullptr, surface));
 
@@ -53,6 +51,18 @@ namespace vulkan_renderer
         }
 
         return true; 
+    }
+
+    b8 vulkan_platform_presentation_support(VkPhysicalDevice physical_device, u32 queue_family_index)
+    {
+        linux_handle_s platform_handle;
+        if (!platform_get_linux_handle(&platform_handle))
+        {
+            return false;
+        }
+
+        return (b8)vkGetPhysicalDeviceXcbPresentationSupportKHR(physical_device, 
+                queue_family_index, platform_handle.connection, platform_handle.screen->root_visual);  
     }
 }
 

@@ -40,7 +40,7 @@ void game_test_dynarray()
     assert(array.size == 1);
     assert(array.capacity == 1);
     
-
+    // TODO: more tests
 
 
     fprintf(stderr, "dynarray test passed!\n");

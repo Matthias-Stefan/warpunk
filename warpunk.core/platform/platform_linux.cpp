@@ -72,8 +72,7 @@ typedef struct _thread_context_t
 typedef struct _linux_state_t
 {
     Display* display;
-    xcb_screen_t* screen;
-    linux_handle_info_t handle;
+    linux_handle_s handle;
 
     pthread_mutex_t mutex;
     b8 thread_ticket_free_list[64] = { true };
@@ -132,29 +131,15 @@ b8 platform_result_is_success(xcb_void_cookie_t cookie)
     return true;
 }
 
-b8 platform_linux_get_connection(xcb_connection_t **out_connection)
+b8 platform_get_linux_handle(linux_handle_s *out_linux_handle)
 {
-    if (linux_state.handle.connection == nullptr)
+    if (linux_state.handle.connection == nullptr || linux_state.handle.window == 0 || linux_state.handle.screen == nullptr)
     {
-        fprintf(stderr, "Failed to provide connection");
-        *out_connection = nullptr;
+        out_linux_handle = nullptr;
         return false;
     }
 
-    *out_connection = linux_state.handle.connection;
-    return true;
-}
-
-b8 platform_linux_get_window(xcb_window_t *out_window)
-{
-    if (linux_state.handle.window == 0)
-    {
-        fprintf(stderr, "Failed to provide window");
-        *out_window = 0;
-        return false;
-    }
-
-    *out_window = linux_state.handle.window;
+    *out_linux_handle = linux_state.handle;
     return true;
 }
 
@@ -194,13 +179,13 @@ bool platform_startup()
 
     const xcb_setup_t* setup = xcb_get_setup(linux_state.handle.connection);
     xcb_screen_iterator_t iter = xcb_setup_roots_iterator(setup);
-    linux_state.screen = iter.data;
+    linux_state.handle.screen = iter.data;
 
-    fprintf(stderr, "%i\n", linux_state.screen->root_depth);
+    fprintf(stderr, "%i\n", linux_state.handle.screen->root_depth);
 
     linux_state.handle.window = xcb_generate_id(linux_state.handle.connection);
     u32 value_mask = XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK;
-    u32 value_list[] = { linux_state.screen->black_pixel, 
+    u32 value_list[] = { linux_state.handle.screen->black_pixel, 
         XCB_EVENT_MASK_EXPOSURE | 
         XCB_EVENT_MASK_KEY_PRESS | XCB_EVENT_MASK_KEY_RELEASE | 
         XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE | 
@@ -214,12 +199,12 @@ bool platform_startup()
                     linux_state.handle.connection,       // X server connection
                     XCB_COPY_FROM_PARENT,                // Window depth
                     linux_state.handle.window,           // Window ID
-                    linux_state.screen->root,            // Parent window (root)
+                    linux_state.handle.screen->root,            // Parent window (root)
                     0, 0,                                // Position (x, y)
                     window_width, window_height,         // Size (width, height)
                     border_width,                        // Border width
                     XCB_WINDOW_CLASS_INPUT_OUTPUT,       // Window class
-                    linux_state.screen->root_visual,     // Visual
+                    linux_state.handle.screen->root_visual,     // Visual
                     value_mask,                          // Value mask
                     value_list)))                        // Value list
     {
@@ -401,14 +386,14 @@ void platform_process_input()
 
 b8 platform_get_window_handle(s32* out_size, void* out_platform_handle)
 {
-    *out_size = sizeof(linux_handle_info_t);
+    *out_size = sizeof(linux_handle_s);
     if (!out_platform_handle)
     {
         return false; 
     }
 
     // TODO: Platform allocation methods 
-    memcpy(out_platform_handle, &linux_state.handle, sizeof(linux_handle_info_t));
+    memcpy(out_platform_handle, &linux_state.handle, sizeof(linux_handle_s));
     return true;
 }
 
@@ -500,7 +485,7 @@ b8 platform_set_window_mode(platform_window_mode_t platform_window_mode)
 {
     xcb_connection_t* connection = linux_state.handle.connection;
     xcb_window_t window = linux_state.handle.window;
-    xcb_screen_t* screen = linux_state.screen;
+    xcb_screen_t* screen = linux_state.handle.screen;
 
     xcb_atom_t wm_state_atom = platform_get_atom("_NET_WM_STATE");
     xcb_atom_t wm_state_fullscreen_atom = platform_get_atom("_NET_WM_STATE_FULLSCREEN");
@@ -770,7 +755,6 @@ void platform_threadpool_add(platform_threading_job_t* jobs, u32 chunk_count, th
         thread_context->threads.data[job_idx] = {};
         thread_context->jobs.data[job_idx] = job;
         thread_context->handles.data[job_idx] = { ticket_idx, job_idx };
-        dynarray_add(&thread_context->handles, { ticket_idx, job_idx });
        
         pthread_create(&thread_context->threads.data[job_idx], 
                 nullptr, 

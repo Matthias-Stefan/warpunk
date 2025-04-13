@@ -6,16 +6,15 @@
 
 #include <X11/Xlib-xcb.h>
 
-typedef struct _linux_handle_info_t
+typedef struct _linux_handle_s
 {
     xcb_connection_t* connection;
     xcb_window_t window;
-} linux_handle_info_t;
+    xcb_screen_t* screen;
+} linux_handle_s;
 
 b8 platform_result_is_success(xcb_void_cookie_t cookie);
 
-b8 platform_linux_get_connection(xcb_connection_t** out_connection);
-
-b8 platform_linux_get_window(xcb_window_t* out_window);
+b8 platform_get_linux_handle(linux_handle_s* out_linux_handle);
 
 #endif // WARPUNK_LINUX
