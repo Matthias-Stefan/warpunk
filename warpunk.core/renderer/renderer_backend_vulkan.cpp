@@ -63,7 +63,6 @@ namespace vulkan_renderer
         vulkan_platform_get_required_instance_extensions(&instance_extension_count, &instance_extensions.data);
 
 #if WARPUNK_DEBUG
-        instance_extensions.capacity = instance_extension_count; 
         instance_extension_count += 1;
         dynarray_add(&instance_extensions, "VK_EXT_debug_utils");
 #endif
@@ -86,7 +85,7 @@ namespace vulkan_renderer
 
         /** begin validation layers */
 
-        dynarray_t<const char*> validation_layers = dynarray_create<const char *>(1);
+        dynarray_t<const char*> validation_layers = dynarray_empty<const char *>();
         dynarray_add(&validation_layers, "VK_LAYER_KHRONOS_validation");
 #ifdef WARPUNK_DEBUG
         const b8 enable_validation_layers = true;

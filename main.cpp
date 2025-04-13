@@ -39,7 +39,7 @@ int main()
     }
 
     renderer_config.type = RENDERER_TYPE_VULKAN;
- if (!renderer_startup(renderer_config))
+    if (!renderer_startup(renderer_config))
     {
         fprintf(stderr, "Failed to startup renderer.\n");
     }

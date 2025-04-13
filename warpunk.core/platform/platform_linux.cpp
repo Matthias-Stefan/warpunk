@@ -766,9 +766,10 @@ void platform_threadpool_add(platform_threading_job_t* jobs, u32 chunk_count, th
         job.arg_size = jobs->arg_size;
         job.arg = platform_memory_alloc(jobs->arg_size);
         platform_memory_copy(job.arg, ((u8 *)jobs->arg) + jobs->arg_size * job_idx, jobs->arg_size);
-        
-        dynarray_add(&thread_context->threads, {});
-        dynarray_add(&thread_context->jobs, job); 
+       
+        thread_context->threads.data[job_idx] = {};
+        thread_context->jobs.data[job_idx] = job;
+        thread_context->handles.data[job_idx] = { ticket_idx, job_idx };
         dynarray_add(&thread_context->handles, { ticket_idx, job_idx });
        
         pthread_create(&thread_context->threads.data[job_idx], 

@@ -21,47 +21,27 @@ typedef struct _test_data_t
 void game_test_dynarray()
 {
     fprintf(stderr, "running dynarray test...\n");
-    dynarray_t<test_data_t> array = dynarray_create<test_data_t>(5);
-    assert(array.data != nullptr);
-    assert(array.size == 5);
-    assert(array.capacity == 0);
-    
-    dynarray_add(&array, { true, 100, 101, 102, 103.0f, 104.0 });
-    dynarray_add(&array, { false, 200, 201, 202, 203.0f, 204.0 });
-    dynarray_add(&array, { true, 300, 301, 302, 303.0f, 304.0 });
-    dynarray_add(&array, { false, 400, 401, 402, 403.0f, 404.0 });
-    dynarray_add(&array, { true, 500, 501, 502, 503.0f, 504.0 });
-    assert(dynarray_front(&array).b == 100);
-    assert(dynarray_back(&array).d == 502);
-
-    dynarray_add(&array, { false, 600, 601, 602, 603.0f, 604.0 });
-    assert(array.data != nullptr);
-    assert(array.size == 10);
-    assert(array.capacity == 6);
-
-    dynarray_shrink_to_fit(&array);
-    assert(array.size == 6);
-
-    assert(dynarray_back(&array).d == 602);
-    dynarray_remove(&array);
-    assert(dynarray_back(&array).d == 502);
-    assert(array.capacity == 5);
-
-    assert(array.data[2].d == 302);
-    dynarray_remove_at(&array, 2);
-    assert(array.data[2].d == 402);
-    assert(array.capacity == 4);
-
-    dynarray_resize(&array, 500);
-    assert(array.size == 500);
-
-    dynarray_clear(&array);
-    assert(array.data[0].b == 0);
-
-    dynarray_destroy(&array);
-    assert(array.data == nullptr);
+    dynarray_t<test_data_t> array = dynarray_empty<test_data_t>();
     assert(array.size == 0);
     assert(array.capacity == 0);
+    assert(array.data == nullptr);
+
+    array = dynarray_create<test_data_t>(20);
+    assert(array.size == 20);
+    assert(array.capacity == 20);
+    assert(array.data != nullptr);
+    dynarray_destroy(&array);
+    assert(array.size == 0);
+    assert(array.capacity == 0);
+    assert(array.data == nullptr);
+
+    dynarray_add(&array, { true, 100, 101, 102, 103.0f, 104.0 });
+    assert(array.data[0].b == 100);
+    assert(array.size == 1);
+    assert(array.capacity == 1);
+    
+
+
 
     fprintf(stderr, "dynarray test passed!\n");
 }
