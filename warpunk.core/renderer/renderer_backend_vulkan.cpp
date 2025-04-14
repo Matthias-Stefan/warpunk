@@ -152,11 +152,11 @@ namespace vulkan_renderer
 
         if (!select_physical_device(&requirements))
         {
-            dynarray_clear(requirements.device_extension_names);
+            dynarray_destroy(&requirements.device_extension_names);
             return false;
         }
 
-        dynarray_clear(requirements.device_extension_names);
+        dynarray_destroy(&requirements.device_extension_names);
         
         /** NOTE: logical device */
     
@@ -185,7 +185,7 @@ namespace vulkan_renderer
             queue_indices[queue_index++] = state.queue_family_indices.transfer_queue_index;
         }
 
-        dynarray_s<VkDeviceQueueCreateInfo> device_queue_create_info = dynarray_create<VkDeviceQueueCreateInfo>(index_count);        
+        dynarray_s<VkDeviceQueueCreateInfo> queue_create_info = dynarray_create<VkDeviceQueueCreateInfo>(index_count);        
         f32 queue_priorities[2] = { 0.9f, 1.0f };
        
         // TODO: dynamic
@@ -195,15 +195,15 @@ namespace vulkan_renderer
         vkGetPhysicalDeviceQueueFamilyProperties(state.physical_device, &prop_count, props);
 
         for (u32 i = 0; i < index_count; ++i) {
-            queue_create_infos[i].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-            queue_create_infos[i].queueFamilyIndex = queue_indices[i];
-            queue_create_infos[i].queueCount = 1;
+            queue_create_info.data[i].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+            queue_create_info.data[i].queueFamilyIndex = queue_indices[i];
+            queue_create_info.data[i].queueCount = 1;
     
-            if (present_shares_graphics_queue && indices[i] == state.queue_family_indices.present_queue_index) 
+            if (present_shares_graphics_queue && queue_indices[i] == state.queue_family_indices.present_queue_index) 
             {
                 if (props[state.queue_family_indices.present_queue_index].queueCount > 1) 
                 {
-                    queue_create_infos[i].queueCount = 2;
+                    queue_create_info.data[i].queueCount = 2;
                 } 
                 else 
                 {
@@ -211,13 +211,13 @@ namespace vulkan_renderer
                 }
             }
     
-            if (indices[i] == state.queue_family_indices.graphics_queue_index) 
+            if (queue_indices[i] == state.queue_family_indices.graphics_queue_index) 
             {
-                 queue_create_infos[i].queueCount = 2;
+                 queue_create_info.data[i].queueCount = 2;
             }
-            queue_create_infos[i].flags = 0;
-            queue_create_infos[i].pNext = 0;
-            queue_create_infos[i].pQueuePriorities = queue_priorities;
+            queue_create_info.data[i].flags = 0;
+            queue_create_info.data[i].pNext = 0;
+            queue_create_info.data[i].pQueuePriorities = queue_priorities;
         }  
 
         /** NOTE: device extension */
@@ -230,15 +230,12 @@ namespace vulkan_renderer
             vulkan_eval_result(vkEnumerateDeviceExtensionProperties(state.physical_device, nullptr, &available_device_extension_count, device_extension_properties.data));
         }
 
-        dynarray_s<const char*> device_extension_names();
+        // TODO:
+        dynarray_s<const char*> device_extension_names;
 
-
-
-
-
-        
-        vkCreateDevice(state.physical_device, &device_create_info, &state.allocator, &state.device); 
-        dynarray_destroy(&device_queue_create_info);
+        // TODO:
+        //vkCreateDevice(state.physical_device, &device_create_info, &state.allocator, &state.device); 
+        dynarray_destroy(&queue_create_info);
         dynarray_destroy(&device_extension_properties);
         dynarray_destroy(&device_extension_names);
 
@@ -334,7 +331,7 @@ namespace vulkan_renderer
 
             vulkan_queue_family_indices_s queue_family_indices = {};
             b8 is_suitable = physical_device_is_suitable(physical_devices.data[device_index], 
-                    &properties, &features, &requirements, &queue_family_indices);
+                    &properties, &features, requirements, &queue_family_indices);
 
             if (is_suitable)
             {
@@ -405,12 +402,12 @@ namespace vulkan_renderer
                     state.supports_dynamic_state_natively = true;
                 }
                 // If not supported natively, it might be supported via extension.
-                if (dynamic_state_next.extendedDynamicState) 
+                if (dynamic_state.extendedDynamicState) 
                 {
                     state.supports_dynamic_state = true;
                 }
                 // Check for smooth line rasterization support.
-                if (smooth_line_next.smoothLines) 
+                if (smooth_line.smoothLines) 
                 {
                     state.supports_smooth_lines = true;
                 }
@@ -535,21 +532,22 @@ namespace vulkan_renderer
             fprintf(stderr, "Transfer queue family index: %d\n", out_queue_family_indices->transfer_queue_index);
             fprintf(stderr, "Compute  queue family index: %d\n", out_queue_family_indices->compute_queue_index);
 
-            if (requirements->device_extension_names)
+            if (requirements->device_extension_names.data)
             {
                 u32 available_extension_count = 0;
-                dynarray_s<VkExtensionProperties> available_extensions = dynarray_empty();
+                dynarray_s<VkExtensionProperties> available_extensions = dynarray_empty<VkExtensionProperties>();
                 vulkan_eval_result(vkEnumerateDeviceExtensionProperties(physical_device, 0, &available_extension_count, nullptr));
                 if (available_extension_count > 0)
                 {
                     available_extensions = dynarray_create<VkExtensionProperties>(available_extension_count);
-                    vulkan_eval_result(vkEnumerateDeviceExtensionProperties(physical_device, 0, &available_extension_count, &available_extensions.data));
+                    vulkan_eval_result(vkEnumerateDeviceExtensionProperties(physical_device, 0, &available_extension_count, available_extensions.data));
 
                     for (u32 requirement_index = 0; requirement_index < requirements->device_extension_names.capacity; ++requirement_index) 
                     {
                         b8 found = false;
                         for (u32 available_index = 0; available_index < available_extension_count; ++available_index) 
                         {
+                            // TODO: string compare 
                             if (strings_equal(requirements->device_extension_names.data[requirement_index], available_extensions[available_index].extensionName)) 
                             {
                                 found = true;
@@ -559,7 +557,7 @@ namespace vulkan_renderer
     
                         if (!found) 
                         {
-                            KINFO("Required extension not found: '%s', skipping device.", requirements->device_extension_names[i]);
+                            fprintf(stderr, "Required extension not found: '%s', skipping device.", requirements->device_extension_names.data[requirement_index]);
                             dynarray_destroy(&available_extensions);
                             return false;
                         }
