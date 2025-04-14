@@ -62,9 +62,9 @@ typedef struct _thread_handle_t
 
 typedef struct _thread_context_t
 {
-    dynarray_t<pthread_t> threads;
-    dynarray_t<platform_threading_job_t> jobs;
-    dynarray_t<thread_handle_t> handles;
+    dynarray_s<pthread_t> threads;
+    dynarray_s<platform_threading_job_t> jobs;
+    dynarray_s<thread_handle_t> handles;
     s64 active_thread_count;
     pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER; 
 } thread_context_t;

@@ -1,5 +1,12 @@
 {
     "files.associations": {
-        "cmath": "cpp"
+        "cmath": "cpp",
+        "algorithm": "cpp",
+        "xiosbase": "cpp",
+        "xlocale": "cpp",
+        "xutility": "cpp",
+        "random": "cpp",
+        "vector": "cpp",
+        "xstring": "cpp"
     }
 }

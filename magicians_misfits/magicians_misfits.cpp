@@ -21,7 +21,7 @@ typedef struct _test_data_t
 void game_test_dynarray()
 {
     fprintf(stderr, "running dynarray test...\n");
-    dynarray_t<test_data_t> array = dynarray_empty<test_data_t>();
+    dynarray_s<test_data_t> array = dynarray_empty<test_data_t>();
     assert(array.size == 0);
     assert(array.capacity == 0);
     assert(array.data == nullptr);
