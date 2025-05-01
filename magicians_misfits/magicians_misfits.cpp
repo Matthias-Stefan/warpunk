@@ -8,7 +8,7 @@
 #include <warpunk.core/container/dynarray.hpp>
 #include <warpunk.core/container/dynqueue.hpp>
 
-typedef struct _test_data_t
+typedef struct _test_data_s
 {
     b8 a;
     s16 b;
@@ -16,17 +16,17 @@ typedef struct _test_data_t
     s64 d;
     f32 e;
     f64 f;
-} test_data_t;
+} test_data_s;
 
 void game_test_dynarray()
 {
     fprintf(stderr, "running dynarray test...\n");
-    dynarray_s<test_data_t> array = dynarray_empty<test_data_t>();
+    dynarray_s<test_data_s> array = dynarray_empty<test_data_s>();
     assert(array.size == 0);
     assert(array.capacity == 0);
     assert(array.data == nullptr);
 
-    array = dynarray_create<test_data_t>(20);
+    array = dynarray_create<test_data_s>(20);
     assert(array.size == 20);
     assert(array.capacity == 20);
     assert(array.data != nullptr);
@@ -49,7 +49,7 @@ void game_test_dynarray()
 void game_test_dynqueue()
 {
     fprintf(stderr, "running dynqueue test...\n");
-    dynqueue_t<test_data_t> queue = dynqueue_create<test_data_t>(2);
+    dynqueue_s<test_data_s> queue = dynqueue_create<test_data_s>(2);
     assert(queue.data != nullptr);
     assert(queue.size == 2);
     assert(queue.capacity == 0);
@@ -77,7 +77,7 @@ void game_test_dynqueue()
     assert(queue.head == 0);
     assert(queue.tail == 3);
     
-    test_data_t test_data;
+    test_data_s test_data;
     test_data = dynqueue_dequeue(&queue);
     assert(test_data.b == 100);
     assert(queue.size == 4);
@@ -166,7 +166,7 @@ void game_tick(double dt)
         fprintf(stderr, "mouse_delta: %i, %i\n", delta_abs, delta_rel);
     }
 
-    platform_window_info_t window_info = {};
+    platform_window_info_s window_info = {};
     if (platform_get_window_info(&window_info))
     {
         if (window_info.platform_window_mode == FULLSCREEN)

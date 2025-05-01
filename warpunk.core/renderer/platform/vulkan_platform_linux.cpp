@@ -8,7 +8,7 @@
 
 #include "warpunk.core/platform/platform.h"
 #include "warpunk.core/platform/platform_linux.h"
-#include "warpunk.core/renderer/renderer_backend_vulkan_types.h"
+#include "warpunk.core/renderer/vulkan/vulkan_types.h"
 
 namespace vulkan_renderer
 {

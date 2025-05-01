@@ -29,10 +29,11 @@ int main()
     platform_register_mouse_wheel_event(input_system_process_mouse_wheel);
 
     // Renderer
-    renderer_config_t renderer_config = {};
+    renderer_config_s renderer_config = {};
     renderer_config.type = RENDERER_TYPE_SOFTWARE;
     renderer_config.width = 1920 / 2;
-    renderer_config.aspect_ratio = 16.0 / 9.0; 
+    renderer_config.aspect_ratio = 16.0 / 9.0;
+    renderer_config.flags = RENDERER_CONFIG_FLAG_VSYNC_ENABLED_BIT; 
     if (!renderer_startup(renderer_config))
     {
        fprintf(stderr, "Failed to startup renderer.\n"); 
@@ -45,14 +46,14 @@ int main()
     }
 
     // Game 
-    library_context_t library_context = {};
+    library_context_s library_context = {};
     if (!platform_load_library("./bin/debug/magicians_misfits.so", &library_context))
     {
         fprintf(stderr, "shutdown warpunk.\n");
         return -1;
     }
     
-    function_description_t game_startup_desc = {};
+    function_description_s game_startup_desc = {};
     game_startup_desc.name = "game_startup";
     if (!platform_get_function(&library_context, &game_startup_desc))
     {
@@ -62,7 +63,7 @@ int main()
     game_startup_t game_startup = (game_startup_t)game_startup_desc.function;
     game_startup();
 
-    function_description_t game_tick_desc = {};
+    function_description_s game_tick_desc = {};
     game_tick_desc.name = "game_tick";
     if (!platform_get_function(&library_context, &game_tick_desc))
     {

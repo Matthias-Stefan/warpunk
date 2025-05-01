@@ -7,7 +7,7 @@
 
 //////////////////////////////////////////////////////////////////////
 
-typedef struct _function_description_t
+typedef struct _function_description_s
 {
     const char* name;
     void* function;
@@ -15,23 +15,23 @@ typedef struct _function_description_t
     b8 is_dirty;
     f32 total_execution_time;
     f32 average_execution_time;
-} function_description_t;
+} function_description_s;
 
-typedef struct _library_context_t
+typedef struct _library_context_s
 {
     void* handle;
-    std::vector<function_description_t*> functions;
-} library_context_t;
+    std::vector<function_description_s*> functions;
+} library_context_s;
 
-typedef enum _platform_window_mode_t
+typedef enum _platform_window_mode_e
 {
     FULLSCREEN,
     WINDOWED,
 
     PLATFORM_WINDOW_MODE_COUNT
-} platform_window_mode_t;
+} platform_window_mode_e;
 
-typedef struct _platform_window_info_t
+typedef struct _platform_window_info_s
 {
     char* title;
     s16 width;
@@ -39,8 +39,8 @@ typedef struct _platform_window_info_t
     b8 is_visible;
     s16 monitor_index;
     f32 dpi_scale;
-    platform_window_mode_t platform_window_mode;
-} platform_window_info_t;
+    platform_window_mode_e platform_window_mode;
+} platform_window_info_s;
 
 /** */
 bool platform_startup();
@@ -55,29 +55,29 @@ void platform_process_input();
 b8 platform_get_window_handle(s32* size, void* platform_handle);
 
 //* */
-warpunk_api b8 platform_load_library(const char* path, library_context_t* out_library_context);
+warpunk_api b8 platform_load_library(const char* path, library_context_s* out_library_context);
 
 //* */
-warpunk_api b8 platform_unload_library(library_context_t* library_context);
+warpunk_api b8 platform_unload_library(library_context_s* library_context);
 
 //* */
-warpunk_api b8 platform_get_function(library_context_t* library_context, function_description_t* out_function_description);
+warpunk_api b8 platform_get_function(library_context_s* library_context, function_description_s* out_function_description);
 
 /** */
 warpunk_api b8 platform_is_mouse_inside_window();
 
 /** */
-warpunk_api b8 platform_set_window_mode(platform_window_mode_t platform_window_mode);
+warpunk_api b8 platform_set_window_mode(platform_window_mode_e platform_window_mode);
 
 /** */
-warpunk_api b8 platform_get_window_info(platform_window_info_t* platform_window_info);
+warpunk_api b8 platform_get_window_info(platform_window_info_s* platform_window_info);
 
 /** ------ */
 /** memory */
 /** ------ */
 
 /** */
-warpunk_api  void* platform_memory_alloc(s64 size);
+warpunk_api void* platform_memory_alloc(s64 size);
 
 /** */
 warpunk_api void platform_memory_free(void* src);

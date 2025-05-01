@@ -6,23 +6,23 @@
 
 //////////////////////////////////////////////////////////////////////
 
-typedef struct _keyboard_t
+typedef struct _keyboard_s
 {
     b8 allow_key_repeats;
     
     b8 current_key_state[KEYCODE_COUNT];
     b8 previous_key_state[KEYCODE_COUNT];
-} keyboard_t;
+} keyboard_s;
 
-typedef enum _mouse_time_state_t
+typedef enum _mouse_time_state_e
 {
     MOUSE_TIME_STATE_CURRENT,
     MOUSE_TIME_STATE_PREVIOUS,
 
     MOUSE_TIME_STATE_COUNT
-} mouse_time_state_t;
+} mouse_time_state_e;
 
-typedef struct _mouse_t
+typedef struct _mouse_s
 {
     b8 inside_window;
     
@@ -31,26 +31,26 @@ typedef struct _mouse_t
     s16 x[MOUSE_TIME_STATE_COUNT];
     s16 y[MOUSE_TIME_STATE_COUNT];
     s32 delta[MOUSE_TIME_STATE_COUNT];
-} mouse_t;
+} mouse_s;
 
-typedef struct _input_state_t
+typedef struct _input_state_s
 {
-    keyboard_t keyboard;
-    mouse_t mouse;
+    keyboard_s keyboard;
+    mouse_s mouse;
     s32 drag_threshold = 5;
-} input_state_t;
+} input_state_s;
 
 //////////////////////////////////////////////////////////////////////
 
 // TODO: ptr and dynamic memory alloc!
-static input_state_t input_state; 
+static input_state_s input_state; 
 
 //////////////////////////////////////////////////////////////////////
 
 b8 input_system_startup()
 {
     // KEYBOARD
-    keyboard_t* keyboard = &input_state.keyboard;
+    keyboard_s* keyboard = &input_state.keyboard;
     for (u32 key_index = 0; key_index < KEYCODE_COUNT; ++key_index)
     {
         keyboard->current_key_state[key_index] = false;
@@ -59,7 +59,7 @@ b8 input_system_startup()
     keyboard->allow_key_repeats = false;
 
     // MOUSE
-    mouse_t* mouse = &input_state.mouse;
+    mouse_s* mouse = &input_state.mouse;
     for (u32 mouse_button_index = 0; mouse_button_index < MOUSE_BUTTON_COUNT; ++mouse_button_index)
     {
         mouse->current_key_state[mouse_button_index] = false;
@@ -84,14 +84,14 @@ void input_system_shutdown()
 void input_system_update()
 {
     // KEYBOARD
-    keyboard_t* keyboard = &input_state.keyboard; 
+    keyboard_s* keyboard = &input_state.keyboard; 
     for (u32 key_index = 0; key_index < KEYCODE_COUNT; ++key_index)
     {
         keyboard->previous_key_state[key_index] = input_state.keyboard.current_key_state[key_index];
     }
 
     // MOUSE
-    mouse_t* mouse = &input_state.mouse;
+    mouse_s* mouse = &input_state.mouse;
     for (u32 mouse_button_index = 0; mouse_button_index < MOUSE_BUTTON_COUNT; ++mouse_button_index)
     {
         mouse->previous_key_state[mouse_button_index] = mouse->current_key_state[mouse_button_index];
@@ -101,7 +101,7 @@ void input_system_update()
     mouse->delta[MOUSE_TIME_STATE_PREVIOUS] = mouse->delta[MOUSE_TIME_STATE_CURRENT];
 }
 
-void input_system_configure(input_system_config_t input_system_config)
+void input_system_configure(input_system_config_s input_system_config)
 {
    input_state.drag_threshold = input_system_config.drag_threshold; 
 }
@@ -167,7 +167,7 @@ b8 input_system_get_mouse_position(s16* x_abs, s16* y_abs, s16* x_rel, s16* y_re
         return false;
     }
 
-    mouse_t* mouse = &input_state.mouse;
+    mouse_s* mouse = &input_state.mouse;
     if (x_abs)
     {
         *x_abs = mouse->x[MOUSE_TIME_STATE_CURRENT];

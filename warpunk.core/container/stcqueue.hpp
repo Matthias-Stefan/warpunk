@@ -5,7 +5,7 @@
 
 /** */
 template<typename T>
-struct stcqueue_t
+struct stcqueue_s
 {
     s64 size;
     s64 capacity;
@@ -16,14 +16,14 @@ struct stcqueue_t
 
 /** */
 template<typename T>
-warpunk_api inline stcqueue_t<T> stcqueue_create(s64 size)
+warpunk_api inline stcqueue_s<T> stcqueue_create(s64 size)
 {
     if (size <= 0)
     {
         size = 1;
     }
 
-    stcqueue_t<T> queue = {};
+    stcqueue_s<T> queue = {};
     queue.size = size;
     queue.capacity = 0;
     queue.data = (T *)platform_memory_alloc(sizeof(T) * size);
@@ -35,7 +35,7 @@ warpunk_api inline stcqueue_t<T> stcqueue_create(s64 size)
 
 /** */
 template<typename T>
-warpunk_api inline void stcqueue_destroy(stcqueue_t<T>* queue)
+warpunk_api inline void stcqueue_destroy(stcqueue_s<T>* queue)
 {   
     platform_memory_free(queue->data);
     queue->size = 0;
@@ -47,7 +47,7 @@ warpunk_api inline void stcqueue_destroy(stcqueue_t<T>* queue)
 
 /** */
 template<typename T>
-warpunk_api inline b8 stcqueue_enqueue(stcqueue_t<T>* queue, T element)
+warpunk_api inline b8 stcqueue_enqueue(stcqueue_s<T>* queue, T element)
 {
     if (queue->capacity == queue->size)
     {
@@ -62,7 +62,7 @@ warpunk_api inline b8 stcqueue_enqueue(stcqueue_t<T>* queue, T element)
 
 /** */
 template<typename T>
-warpunk_api inline T stcqueue_dequeue(stcqueue_t<T>* queue)
+warpunk_api inline T stcqueue_dequeue(stcqueue_s<T>* queue)
 {
     if (queue->head == queue->tail)
     {
@@ -78,7 +78,7 @@ warpunk_api inline T stcqueue_dequeue(stcqueue_t<T>* queue)
 
 /** */
 template<typename T>
-warpunk_api inline void stcqueue_clear(stcqueue_t<T>* queue)
+warpunk_api inline void stcqueue_clear(stcqueue_s<T>* queue)
 {
     platform_memory_zero(queue->data, sizeof(T) * queue->size);
     queue->capacity = 0;

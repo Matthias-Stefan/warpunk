@@ -1,23 +1,23 @@
 #include "warpunk.core/renderer/renderer_backend.h"
 #include "warpunk.core/renderer/renderer_backend_software.h"
-#include "warpunk.core/renderer/renderer_backend_vulkan.h"
+#include "warpunk.core/renderer/vulkan/vulkan_backend.h"
 
-typedef struct _renderer_api_t
+typedef struct _renderer_api_s
 {
-    b8 (*renderer_startup)(renderer_config_t renderer_config);
+    b8 (*renderer_startup)(renderer_config_s renderer_config);
     b8 (*renderer_shutdown)();
     void (*renderer_begin_frame)();
     void (*renderer_end_frame)();
-    buffer_handle_t (*renderer_create_buffer)(s32 size, void* data);
-    void (*renderer_destroy_buffer)(buffer_handle_t buffer_handle);
-    texture_handle_t (*renderer_create_texture)(s32 width, s32 height, void* data);
-    void (*renderer_destroy_texture)(texture_handle_t texture_handle);
+    buffer_handle_s (*renderer_create_buffer)(s32 size, void* data);
+    void (*renderer_destroy_buffer)(buffer_handle_s buffer_handle);
+    texture_handle_s (*renderer_create_texture)(s32 width, s32 height, void* data);
+    void (*renderer_destroy_texture)(texture_handle_s texture_handle);
     void (*renderer_draw)(void* vertex_array, void* material);
-} renderer_api_t;
+} renderer_api_s;
 
-static renderer_api_t renderer_api; 
+static renderer_api_s renderer_api; 
 
-b8 renderer_startup(renderer_config_t renderer_config)
+b8 renderer_startup(renderer_config_s renderer_config)
 {
     switch (renderer_config.type)
     {
@@ -66,22 +66,22 @@ void renderer_end_frame()
     renderer_api.renderer_end_frame();
 }
 
-buffer_handle_t renderer_create_buffer(s32 size, void* data)
+buffer_handle_s renderer_create_buffer(s32 size, void* data)
 {
     return renderer_api.renderer_create_buffer(size, data);
 }
 
-void renderer_destroy_buffer(buffer_handle_t buffer_handle)
+void renderer_destroy_buffer(buffer_handle_s buffer_handle)
 {
     renderer_api.renderer_destroy_texture(buffer_handle);
 }
 
-texture_handle_t renderer_create_texture(s32 width, s32 height, void* data)
+texture_handle_s renderer_create_texture(s32 width, s32 height, void* data)
 {
     return renderer_api.renderer_create_texture(width, height, data);
 }
 
-void renderer_destroy_texture(texture_handle_t texture_handle)
+void renderer_destroy_texture(texture_handle_s texture_handle)
 {
     renderer_api.renderer_destroy_texture(texture_handle);
 }

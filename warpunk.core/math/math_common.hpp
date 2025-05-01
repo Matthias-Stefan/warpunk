@@ -36,7 +36,7 @@ template<typename T, std::enable_if_t<std::is_same_v<T, f32> || std::is_same_v<T
 // interval
 
 template<typename T>
-struct interval_t
+struct interval_s
 {
     T min;
     T max;
@@ -44,54 +44,60 @@ struct interval_t
 
 /** */
 template<typename T>
-[[nodiscard]] constexpr const interval_t<T> get_universe_interval()
+[[nodiscard]] constexpr const interval_s<T> get_universe_interval()
 {
-    return interval_t<T> { .min = -std::numeric_limits<T>::infinity(),
+    return interval_s<T> { .min = -std::numeric_limits<T>::infinity(),
                            .max = +std::numeric_limits<T>::infinity() };
 }
 
 /** */
 template<typename T>
-[[nodiscard]] constexpr const interval_t<T> get_empty_interval()
+[[nodiscard]] constexpr const interval_s<T> get_empty_interval()
 {
-    return interval_t<T> { .min = +std::numeric_limits<T>::infinity(),
+    return interval_s<T> { .min = +std::numeric_limits<T>::infinity(),
                            .max = -std::numeric_limits<T>::infinity() };
 }
 
 /** */
 template<typename T>
-[[nodiscard]] T range(const interval_t<T>* interval)
+[[nodiscard]] T range(const interval_s<T>* interval)
 {
     return interval->max - interval->min;
 }
 
 /** */
 template<typename T>
-[[nodiscard]] T contains(const interval_t<T>* interval, T value)
+[[nodiscard]] T contains(const interval_s<T>* interval, T value)
 {
     return interval->min <= value && value <= interval->max;
 }
 
 /** */
 template<typename T>
-[[nodiscard]] T surrounds(const interval_t<T>* interval, T value)
+[[nodiscard]] T surrounds(const interval_s<T>* interval, T value)
 {
     return interval->min < value && value < interval->max;
 }
 
-/** */
-template<typename T>
-[[nodiscard]] T clamp(const interval_t<T>* interval, T value)
+template<typename  T>
+[[nodiscard]] T clamp(T min, T max, T value)
 {
-    if (value < interval->min)
+    if (value < min)
     {
-        return interval->min;
+        return min;
     }
-    if (value > interval->max)
+    if (value > max)
     {
-        return interval->max;
+        return max;
     }
     return value;
+}
+
+/** */
+template<typename T>
+[[nodiscard]] T clamp(const interval_s<T>* interval, T value)
+{
+    return clamp<T>(interval->min, interval->max, value);
 }
 
 // random

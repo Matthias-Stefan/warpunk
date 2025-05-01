@@ -54,42 +54,42 @@ static void* platform_thread_main_routine(void* args);
 
 //////////////////////////////////////////////////////////////////////
 
-typedef struct _thread_handle_t
+typedef struct _thread_handle_s
 {
     thread_ticket_t ticket;
     s32 thread_idx;
-} thread_handle_t;
+} thread_handle_s;
 
-typedef struct _thread_context_t
+typedef struct _thread_context_s
 {
     dynarray_s<pthread_t> threads;
     dynarray_s<platform_threading_job_t> jobs;
-    dynarray_s<thread_handle_t> handles;
+    dynarray_s<thread_handle_s> handles;
     s64 active_thread_count;
     pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER; 
-} thread_context_t;
+} thread_context_s;
 
-typedef struct _linux_state_t
+typedef struct _linux_state_s
 {
     Display* display;
     linux_handle_s handle;
 
     pthread_mutex_t mutex;
     b8 thread_ticket_free_list[64] = { true };
-    thread_context_t thread_contexts[64];
+    thread_context_s thread_contexts[64];
 
 
     platform_keyboard_event_t keyboard_event;
     platform_mouse_button_event_t mouse_button_event;
     platform_mouse_move_event_t mouse_move_event;
     platform_mouse_wheel_event_t mouse_wheel_event;
-} linux_state_t;
+} linux_state_s;
 
 //////////////////////////////////////////////////////////////////////
 
 // NOTE: Global
 
-static linux_state_t linux_state;
+static linux_state_s linux_state;
 
 //////////////////////////////////////////////////////////////////////
 
@@ -397,7 +397,7 @@ b8 platform_get_window_handle(s32* out_size, void* out_platform_handle)
     return true;
 }
 
-b8 platform_load_library(const char* path, library_context_t* out_library_context)
+b8 platform_load_library(const char* path, library_context_s* out_library_context)
 {
     void* library_handle = dlopen(path, RTLD_NOW);
     if (!library_handle)
@@ -410,7 +410,7 @@ b8 platform_load_library(const char* path, library_context_t* out_library_contex
     return true;
 }
 
-b8 platform_unload_library(library_context_t* library_context)
+b8 platform_unload_library(library_context_s* library_context)
 {
     if (dlclose(library_context->handle) != 0)
     {
@@ -418,7 +418,7 @@ b8 platform_unload_library(library_context_t* library_context)
         return false;
     }
 
-    for (function_description_t* function_description : library_context->functions)
+    for (function_description_s* function_description : library_context->functions)
     {
         function_description->function = nullptr;
         function_description->is_dirty = true;
@@ -429,7 +429,7 @@ b8 platform_unload_library(library_context_t* library_context)
     return true;
 }
 
-b8 platform_get_function(library_context_t* library_context, function_description_t* out_function_description)
+b8 platform_get_function(library_context_s* library_context, function_description_s* out_function_description)
 {
     out_function_description->function = dlsym(library_context->handle, out_function_description->name);
     if (!out_function_description->function)
@@ -481,7 +481,7 @@ b8 platform_is_mouse_inside_window()
     return inside;
 }
 
-b8 platform_set_window_mode(platform_window_mode_t platform_window_mode)
+b8 platform_set_window_mode(platform_window_mode_e platform_window_mode)
 {
     xcb_connection_t* connection = linux_state.handle.connection;
     xcb_window_t window = linux_state.handle.window;
@@ -538,11 +538,11 @@ b8 platform_set_window_mode(platform_window_mode_t platform_window_mode)
     return true;
 }
 
-b8 platform_get_window_info(platform_window_info_t* platform_window_info)
+b8 platform_get_window_info(platform_window_info_s* platform_window_info)
 {
     if (!platform_window_info)
     {
-        fprintf(stderr, "Failed to provide window info! platform_window_info_t is nullptr.\n");
+        fprintf(stderr, "Failed to provide window info! platform_window_info_s is nullptr.\n");
         return false;
     }
 
@@ -687,8 +687,8 @@ void platform_memory_zero(void* dst, s64 size)
 
 static void* platform_thread_main_routine(void* args)
 {
-    thread_handle_t* handle = (thread_handle_t *)args;
-    thread_context_t* thread_context = &linux_state.thread_contexts[handle->ticket];
+    thread_handle_s* handle = (thread_handle_s *)args;
+    thread_context_s* thread_context = &linux_state.thread_contexts[handle->ticket];
     platform_threading_job_t* job = (platform_threading_job_t *)&thread_context->jobs.data[handle->thread_idx]; 
 
     if (job != nullptr && job->function != nullptr)
@@ -734,14 +734,14 @@ void platform_threadpool_add(platform_threading_job_t* jobs, u32 chunk_count, th
 
     *out_ticket = ticket_idx;
 
-    thread_context_t* thread_context = &linux_state.thread_contexts[ticket_idx];
+    thread_context_s* thread_context = &linux_state.thread_contexts[ticket_idx];
     if (thread_context->threads.data == nullptr)
     {
         thread_context->threads = dynarray_create<pthread_t>(chunk_count);
     }
     dynarray_clear(&thread_context->threads);
     thread_context->jobs = dynarray_create<platform_threading_job_t>(chunk_count);
-    thread_context->handles = dynarray_create<thread_handle_t>(chunk_count);
+    thread_context->handles = dynarray_create<thread_handle_s>(chunk_count);
     thread_context->active_thread_count = chunk_count;
     
     for (s32 job_idx = 0; job_idx < chunk_count; ++job_idx)
@@ -766,7 +766,7 @@ void platform_threadpool_add(platform_threading_job_t* jobs, u32 chunk_count, th
  
 void platform_threadpool_sync(thread_ticket_t ticket, f64 cancellation_time)
 {
-    thread_context_t* thread_context = &linux_state.thread_contexts[ticket];
+    thread_context_s* thread_context = &linux_state.thread_contexts[ticket];
     for (s32 thread_idx = 0; thread_idx < thread_context->threads.size; ++thread_idx)
     {
         pthread_join(thread_context->threads.data[thread_idx], nullptr);

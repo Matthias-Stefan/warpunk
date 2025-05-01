@@ -4,10 +4,10 @@
 #include "warpunk.core/input_system/input_types.h"
 #include "warpunk.core/platform/platform.h"
 
-typedef struct _input_system_config_t
+typedef struct _input_system_config_s
 {
     s32 drag_threshold;
-} input_system_config_t;
+} input_system_config_s;
 
 /** */
 b8 input_system_startup();
@@ -19,7 +19,7 @@ void input_system_shutdown();
 void input_system_update();
 
 /** */
-void input_system_configure(input_system_config_t input_system_config);
+void input_system_configure(input_system_config_s input_system_config);
 
 // KEYBOARD
 

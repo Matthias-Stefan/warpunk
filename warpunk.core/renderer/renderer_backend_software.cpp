@@ -13,19 +13,19 @@ static camera_handle_t camera_handle;
 static s32 width;
 static s32 height;
 
-static material_t<f64> metal1 = { .type = METAL, .albedo = { 0.8, 0.8, 0.8 } };
-static material_t<f64> metal2 = { .type = METAL, .fuzz = 0.66, .albedo = { 0.8, 0.6, 0.2 } };
-static material_t<f64> metal3 = { .type = METAL, .fuzz = 0.33, .albedo = { 0.33, 0.33, 0.33 } };
-static material_t<f64> lambert1 = { .type = LAMBERT, .albedo = { 0.8, 0.8, 0.0 } };
-static material_t<f64> lambert2 = { .type = LAMBERT, .albedo = { 0.1, 0.2, 0.5 } };
-static material_t<f64> dielectric1 = { .type = DIELECTRIC, .refraction_index=(1.00 / 1.33) };
+static material_s<f64> metal1 = { .type = METAL, .albedo = { 0.8, 0.8, 0.8 } };
+static material_s<f64> metal2 = { .type = METAL, .fuzz = 0.66, .albedo = { 0.8, 0.6, 0.2 } };
+static material_s<f64> metal3 = { .type = METAL, .fuzz = 0.33, .albedo = { 0.33, 0.33, 0.33 } };
+static material_s<f64> lambert1 = { .type = LAMBERT, .albedo = { 0.8, 0.8, 0.0 } };
+static material_s<f64> lambert2 = { .type = LAMBERT, .albedo = { 0.1, 0.2, 0.5 } };
+static material_s<f64> dielectric1 = { .type = DIELECTRIC, .refraction_index=(1.00 / 1.33) };
 
-static sphere_t<f64> spheres[4];
+static sphere_s<f64> spheres[4];
 
 
 namespace software_renderer
 {
-    b8 renderer_startup(renderer_config_t renderer_config)
+    b8 renderer_startup(renderer_config_s renderer_config)
     {
         if (!software_platform_startup())
         {
@@ -37,7 +37,7 @@ namespace software_renderer
         height = (height < 1) ? 1 : height;
 
         /** camera */
-        camera_config_t camera_config = {
+        camera_config_s camera_config = {
             .aspect_ratio = renderer_config.aspect_ratio,
             .focal_length = 1.0,
             .image_width = renderer_config.width,
