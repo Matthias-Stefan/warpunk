@@ -4,7 +4,7 @@
 #include "warpunk.core/src/platform/platform.h"
 
 template<typename T>
-struct dynarray_s
+struct dynarray
 {
     s64 size;
     s64 capacity;
@@ -12,9 +12,9 @@ struct dynarray_s
 };
 
 template<typename T>
-warpunk_api inline dynarray_s<T> dynarray_empty()
+warpunk_api inline dynarray<T> dynarray_empty()
 {
-    dynarray_s<T> array = {};
+    dynarray<T> array = {};
     array.size = 0;
     array.capacity = 0;
     array.data = nullptr;
@@ -23,14 +23,14 @@ warpunk_api inline dynarray_s<T> dynarray_empty()
 }
 
 template<typename T>
-warpunk_api inline dynarray_s<T> dynarray_create(u64 size)
+warpunk_api inline dynarray<T> dynarray_create(u64 size)
 {
     if (size == 0)
     {
         return dynarray_empty<T>();
     }
 
-    dynarray_s<T> array = {};
+    dynarray<T> array = {};
     array.data = (T *)platform_memory_alloc(sizeof(T) * size); 
     platform_memory_zero(array.data, sizeof(T) * size);
     array.size = size;
@@ -39,7 +39,7 @@ warpunk_api inline dynarray_s<T> dynarray_create(u64 size)
 }
 
 template<typename T>
-warpunk_api inline void dynarray_destroy(dynarray_s<T>* array)
+warpunk_api inline void dynarray_destroy(dynarray<T>* array)
 {
     platform_memory_free(array->data);
     array->data = nullptr;
@@ -48,7 +48,7 @@ warpunk_api inline void dynarray_destroy(dynarray_s<T>* array)
 }
 
 template<typename T>
-warpunk_api inline T dynarray_front(dynarray_s<T>* array)
+warpunk_api inline T dynarray_front(dynarray<T>* array)
 {
     if (array->size == 0)
     {
@@ -59,7 +59,7 @@ warpunk_api inline T dynarray_front(dynarray_s<T>* array)
 }
 
 template<typename T>
-warpunk_api inline T dynarray_back(dynarray_s<T>* array)
+warpunk_api inline T dynarray_back(dynarray<T>* array)
 {
     if (array->size == 0)
     {
@@ -70,7 +70,7 @@ warpunk_api inline T dynarray_back(dynarray_s<T>* array)
 }
 
 template<typename T>
-warpunk_api inline b8 dynarray_resize(dynarray_s<T>* array, s64 size)
+warpunk_api inline b8 dynarray_resize(dynarray<T>* array, s64 size)
 {
     if (array->data == nullptr)
     {
@@ -92,13 +92,13 @@ warpunk_api inline b8 dynarray_resize(dynarray_s<T>* array, s64 size)
 }
 
 template<typename T>
-warpunk_api inline b8 dynarray_shrink_to_fit(dynarray_s<T>* array)
+warpunk_api inline b8 dynarrayhrink_to_fit(dynarray<T>* array)
 {
     return dynarray_resize(array, array->capacity);
 }
 
 template<typename T>
-warpunk_api inline void dynarray_add(dynarray_s<T>* array, T element)
+warpunk_api inline void dynarray_add(dynarray<T>* array, T element)
 {
     if (array->size == 0)
     {
@@ -120,7 +120,7 @@ warpunk_api inline void dynarray_add(dynarray_s<T>* array, T element)
 }
 
 template<typename T>
-warpunk_api inline void dynarray_remove(dynarray_s<T>* array)
+warpunk_api inline void dynarray_remove(dynarray<T>* array)
 {
     if (array->capacity == 0)
     {
@@ -130,7 +130,7 @@ warpunk_api inline void dynarray_remove(dynarray_s<T>* array)
 }
 
 template<typename T>
-warpunk_api inline void dynarray_remove_at(dynarray_s<T>* array, s64 index)
+warpunk_api inline void dynarray_remove_at(dynarray<T>* array, s64 index)
 {
     if (index >= array->size)
     {
@@ -146,7 +146,7 @@ warpunk_api inline void dynarray_remove_at(dynarray_s<T>* array, s64 index)
 }
 
 template<typename T>
-warpunk_api inline void dynarray_clear(dynarray_s<T>* array)
+warpunk_api inline void dynarray_clear(dynarray<T>* array)
 {
     platform_memory_zero(array->data, sizeof(T) * array->size);
     array->capacity = 0;

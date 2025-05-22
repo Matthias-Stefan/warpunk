@@ -16,7 +16,7 @@ static const char* engine_name = "warpunk";
 
 namespace vulkan_renderer 
 {
-    static b8 check_validation_layer_support(dynarray_s<const char*>* validation_layers);
+    static b8 check_validation_layer_support(dynarray<const char*>* validation_layers);
 
 
     static b8 select_physical_device(const vulkan_physical_device_requirements_s* requirements);
@@ -40,7 +40,7 @@ namespace vulkan_renderer
         //
         u32 instance_extension_count = 0;
         vulkan_platform_get_required_instance_extensions(&instance_extension_count, nullptr);
-        dynarray_s<const char *> instance_extensions = dynarray_create<const char *>(instance_extension_count);
+        dynarray<const char *> instance_extensions = dynarray_create<const char *>(instance_extension_count);
         vulkan_platform_get_required_instance_extensions(&instance_extension_count, &instance_extensions.data);
 
 #if WARPUNK_DEBUG
@@ -66,7 +66,7 @@ namespace vulkan_renderer
 
         // NOTE: validation layers
 
-        dynarray_s<const char*> validation_layers = dynarray_empty<const char *>();
+        dynarray<const char*> validation_layers = dynarray_empty<const char *>();
         dynarray_add(&validation_layers, "VK_LAYER_KHRONOS_validation");
 #ifdef WARPUNK_DEBUG
         const b8 enable_validation_layers = true;
@@ -143,7 +143,7 @@ namespace vulkan_renderer
             queue_indices[queue_index++] = state.queue_family_indices.transfer_queue_index;
         }
 
-        dynarray_s<VkDeviceQueueCreateInfo> queue_create_info = dynarray_create<VkDeviceQueueCreateInfo>(index_count);        
+        dynarray<VkDeviceQueueCreateInfo> queue_create_info = dynarray_create<VkDeviceQueueCreateInfo>(index_count);        
         f32 queue_priorities[2] = { 0.9f, 1.0f };
        
         VkQueueFamilyProperties props[64];
@@ -165,6 +165,8 @@ namespace vulkan_renderer
                 else 
                 {
                     present_must_share_graphics = true;
+                    // HACK:
+                    (void)present_must_share_graphics;
                 }
             }
     
@@ -180,14 +182,14 @@ namespace vulkan_renderer
         // NOTE: device extension
         u32 available_device_extension_count = 0;
         vulkan_eval_result(vkEnumerateDeviceExtensionProperties(state.physical_device, nullptr, &available_device_extension_count, nullptr));
-        dynarray_s<VkExtensionProperties> device_extension_properties = dynarray_empty<VkExtensionProperties>();
+        dynarray<VkExtensionProperties> device_extension_properties = dynarray_empty<VkExtensionProperties>();
         if (available_device_extension_count > 0)
         {
             device_extension_properties = dynarray_create<VkExtensionProperties>(available_device_extension_count); 
             vulkan_eval_result(vkEnumerateDeviceExtensionProperties(state.physical_device, nullptr, &available_device_extension_count, device_extension_properties.data));
         }
 
-        dynarray_s<const char*> device_extension_names = dynarray_empty<const char *>();
+        dynarray<const char*> device_extension_names = dynarray_empty<const char *>();
         dynarray_add(&device_extension_names, VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 
         if (!state.supports_dynamic_state_natively && state.supports_dynamic_state)
@@ -346,11 +348,11 @@ namespace vulkan_renderer
     }
 
 
-    static b8 check_validation_layer_support(dynarray_s<const char*>* validation_layers)
+    static b8 check_validation_layer_support(dynarray<const char*>* validation_layers)
     {
         u32 layer_count;
         vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
-        dynarray_s<VkLayerProperties> available_layers = dynarray_create<VkLayerProperties>(layer_count);
+        dynarray<VkLayerProperties> available_layers = dynarray_create<VkLayerProperties>(layer_count);
         vkEnumerateInstanceLayerProperties(&layer_count, available_layers.data);
         
         for (u32 layer_idx = 0; layer_idx < validation_layers->capacity; ++layer_idx)
@@ -392,10 +394,10 @@ namespace vulkan_renderer
             fprintf(stderr, "No Vulkan-compatible physical devices found.\n");
             return false;
         }
-        dynarray_s<VkPhysicalDevice> physical_devices = dynarray_create<VkPhysicalDevice>(device_count);
+        dynarray<VkPhysicalDevice> physical_devices = dynarray_create<VkPhysicalDevice>(device_count);
         vkEnumeratePhysicalDevices(state.instance, &device_count, physical_devices.data);
        
-        for (s32 device_index = 0; device_index < device_count; ++device_index)
+        for (u32 device_index = 0; device_index < device_count; ++device_index)
         {
             // Physical device properties.
             VkPhysicalDeviceDriverProperties driver_properties = { .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES };
@@ -545,7 +547,7 @@ namespace vulkan_renderer
 
         u32 queue_family_count = 0;
         vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &queue_family_count, nullptr);
-        dynarray_s<VkQueueFamilyProperties> queue_properties = dynarray_empty<VkQueueFamilyProperties>();
+        dynarray<VkQueueFamilyProperties> queue_properties = dynarray_empty<VkQueueFamilyProperties>();
         if (queue_family_count > 0)
         {
             queue_properties = dynarray_create<VkQueueFamilyProperties>(queue_family_count);
@@ -554,7 +556,7 @@ namespace vulkan_renderer
 
         fprintf(stderr, "Graphics | Present | Compute | Transfer | Name\n");
         u8 min_transfer_score = 255;
-        for (s32 queue_family_index = 0; queue_family_index < queue_family_count; ++queue_family_index)
+        for (u32 queue_family_index = 0; queue_family_index < queue_family_count; ++queue_family_index)
         {
             u8 current_transfer_score = 0;
             
@@ -630,7 +632,7 @@ namespace vulkan_renderer
             if (requirements->device_extension_names.data)
             {
                 u32 available_extension_count = 0;
-                dynarray_s<VkExtensionProperties> available_extensions = dynarray_empty<VkExtensionProperties>();
+                dynarray<VkExtensionProperties> available_extensions = dynarray_empty<VkExtensionProperties>();
                 vulkan_eval_result(vkEnumerateDeviceExtensionProperties(physical_device, 0, &available_extension_count, nullptr));
                 if (available_extension_count > 0)
                 {

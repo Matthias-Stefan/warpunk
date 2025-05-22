@@ -30,7 +30,7 @@ namespace vulkan_renderer
         b8 compute;
         b8 transfer;
     
-        dynarray_s<const char*> device_extension_names;
+        dynarray<const char*> device_extension_names;
         b8 sampler_anisotropy;
         b8 discrete_gpu;
     } vulkan_physical_device_requirements_s;

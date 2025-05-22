@@ -47,16 +47,12 @@ typedef double f64;
 #define MAX_F64 1.7976931348623158e+308
 #define MIN_F64 2.2250738585072014e-308
 
-typedef u32 camera_handle_t;
+typedef u32 camera_handle;
 
 #if defined(__linux__)
     #define WARPUNK_LINUX
 #elif defined(_WIN64)
     #define WARPUNK_WINDOWS
-#elif defined(__APPLE__)
-    #error "Unsuppored platform"
-#else
-    #error "Unsuppored platform"
 #endif
 
 #ifdef WARPUNK_LINUX

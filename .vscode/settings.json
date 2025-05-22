@@ -7,6 +7,49 @@
         "xutility": "cpp",
         "random": "cpp",
         "vector": "cpp",
-        "xstring": "cpp"
+        "xstring": "cpp",
+        "xtr1common": "cpp",
+        "system_error": "cpp",
+        "cstdio": "cpp",
+        "cstdlib": "cpp",
+        "cassert": "cpp"
+    },
+    "todohighlight.keywords": [
+    {
+        "text": "TODO:",
+        "color": "red",
+        "backgroundColor": "transparent",
+        "overviewRulerColor": "red"
+    },
+    {
+        "text": "FIXME:",
+        "color": "hotpink",
+        "backgroundColor": "transparent",
+        "overviewRulerColor": "hotpink"
+    },
+    {
+        "text": "HACK:",
+        "color": "orange",
+        "backgroundColor": "transparent",
+        "overviewRulerColor": "orange"
+    },
+    {
+        "text": "IMPORTANT:",
+        "color": "gold",
+        "backgroundColor": "transparent",
+        "overviewRulerColor": "gold"
+    },
+    {
+        "text": "NOTE:",
+        "color": "limegreen",
+        "backgroundColor": "transparent",
+        "overviewRulerColor": "limegreen"
+    },
+    {
+        "text": "LAST:",
+        "color": "deepskyblue",
+        "backgroundColor": "transparent",
+        "overviewRulerColor": "deepskyblue"
     }
+    ]
 }

@@ -19,7 +19,7 @@ namespace vulkan_renderer
             return false;
         }
 
-        linux_handle_s platform_handle;
+        linux_handle platform_handle;
         if (!platform_get_linux_handle(&platform_handle))
         {
             return false;
@@ -55,7 +55,7 @@ namespace vulkan_renderer
 
     b8 vulkan_platform_presentation_support(VkPhysicalDevice physical_device, u32 queue_family_index)
     {
-        linux_handle_s platform_handle;
+        linux_handle platform_handle;
         if (!platform_get_linux_handle(&platform_handle))
         {
             return false;

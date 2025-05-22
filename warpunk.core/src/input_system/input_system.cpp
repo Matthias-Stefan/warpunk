@@ -6,23 +6,23 @@
 
 //////////////////////////////////////////////////////////////////////
 
-typedef struct _keyboard_s
+typedef struct keyboard
 {
     b8 allow_key_repeats;
     
     b8 current_key_state[KEYCODE_COUNT];
     b8 previous_key_state[KEYCODE_COUNT];
-} keyboard_s;
+} keyboard;
 
-typedef enum _mouse_time_state_e
+typedef enum mouse_time_state
 {
     MOUSE_TIME_STATE_CURRENT,
     MOUSE_TIME_STATE_PREVIOUS,
 
     MOUSE_TIME_STATE_COUNT
-} mouse_time_state_e;
+} mouse_time_state;
 
-typedef struct _mouse_s
+typedef struct mouse
 {
     b8 inside_window;
     
@@ -31,12 +31,12 @@ typedef struct _mouse_s
     s16 x[MOUSE_TIME_STATE_COUNT];
     s16 y[MOUSE_TIME_STATE_COUNT];
     s32 delta[MOUSE_TIME_STATE_COUNT];
-} mouse_s;
+} mouse;
 
 typedef struct _input_state_s
 {
-    keyboard_s keyboard;
-    mouse_s mouse;
+    keyboard keyboard;
+    mouse mouse;
     s32 drag_threshold = 5;
 } input_state_s;
 
@@ -50,7 +50,7 @@ static input_state_s input_state;
 b8 input_system_startup()
 {
     // KEYBOARD
-    keyboard_s* keyboard = &input_state.keyboard;
+    keyboard* keyboard = &input_state.keyboard;
     for (u32 key_index = 0; key_index < KEYCODE_COUNT; ++key_index)
     {
         keyboard->current_key_state[key_index] = false;
@@ -59,7 +59,7 @@ b8 input_system_startup()
     keyboard->allow_key_repeats = false;
 
     // MOUSE
-    mouse_s* mouse = &input_state.mouse;
+    mouse* mouse = &input_state.mouse;
     for (u32 mouse_button_index = 0; mouse_button_index < MOUSE_BUTTON_COUNT; ++mouse_button_index)
     {
         mouse->current_key_state[mouse_button_index] = false;
@@ -84,14 +84,14 @@ void input_system_shutdown()
 void input_system_update()
 {
     // KEYBOARD
-    keyboard_s* keyboard = &input_state.keyboard; 
+    keyboard* keyboard = &input_state.keyboard; 
     for (u32 key_index = 0; key_index < KEYCODE_COUNT; ++key_index)
     {
         keyboard->previous_key_state[key_index] = input_state.keyboard.current_key_state[key_index];
     }
 
     // MOUSE
-    mouse_s* mouse = &input_state.mouse;
+    mouse* mouse = &input_state.mouse;
     for (u32 mouse_button_index = 0; mouse_button_index < MOUSE_BUTTON_COUNT; ++mouse_button_index)
     {
         mouse->previous_key_state[mouse_button_index] = mouse->current_key_state[mouse_button_index];
@@ -101,7 +101,7 @@ void input_system_update()
     mouse->delta[MOUSE_TIME_STATE_PREVIOUS] = mouse->delta[MOUSE_TIME_STATE_CURRENT];
 }
 
-void input_system_configure(input_system_config_s input_system_config)
+void input_system_configure(input_system_config input_system_config)
 {
    input_state.drag_threshold = input_system_config.drag_threshold; 
 }
@@ -110,7 +110,7 @@ void input_system_configure(input_system_config_s input_system_config)
 
 // KEYBOARD
 
-void input_system_process_key(keycode_t keycode, b8 pressed)
+void input_system_process_key(keycode keycode, b8 pressed)
 {
     input_state.keyboard.current_key_state[keycode] = pressed;
 }
@@ -120,22 +120,22 @@ void input_system_key_repeats_enable(b8 enable)
     input_state.keyboard.allow_key_repeats = enable;
 }
 
-b8 input_system_is_key_down(keycode_t keycode)
+b8 input_system_is_key_down(keycode keycode)
 {
     return input_state.keyboard.current_key_state[keycode];
 }
 
-b8 input_system_is_key_up(keycode_t keycode)
+b8 input_system_is_key_up(keycode keycode)
 {
     return !input_state.keyboard.current_key_state[keycode];
 }
 
-b8 input_system_was_key_down(keycode_t keycode)
+b8 input_system_was_key_down(keycode keycode)
 {
     return input_state.keyboard.previous_key_state[keycode];
 }
 
-b8 input_system_was_key_up(keycode_t keycode)
+b8 input_system_was_key_up(keycode keycode)
 {
     return !input_state.keyboard.previous_key_state[keycode];
 }
@@ -144,7 +144,7 @@ b8 input_system_was_key_up(keycode_t keycode)
 
 // MOUSE
 
-void input_system_process_mouse_button(mouse_button_t mouse_button, b8 pressed)
+void input_system_process_mouse_button(mouse_button mouse_button, b8 pressed)
 {
     input_state.mouse.current_key_state[mouse_button] = pressed;
 }
@@ -167,7 +167,7 @@ b8 input_system_get_mouse_position(s16* x_abs, s16* y_abs, s16* x_rel, s16* y_re
         return false;
     }
 
-    mouse_s* mouse = &input_state.mouse;
+    mouse* mouse = &input_state.mouse;
     if (x_abs)
     {
         *x_abs = mouse->x[MOUSE_TIME_STATE_CURRENT];
@@ -188,12 +188,12 @@ b8 input_system_get_mouse_position(s16* x_abs, s16* y_abs, s16* x_rel, s16* y_re
     return true;
 }
 
-b8 input_system_is_mouse_button_pressed(mouse_button_t mouse_button)
+b8 input_system_is_mouse_button_pressed(mouse_button mouse_button)
 {
     return input_state.mouse.current_key_state[mouse_button];
 }
 
-b8 input_system_was_mouse_button_pressed(mouse_button_t mouse_button)
+b8 input_system_was_mouse_button_pressed(mouse_button mouse_button)
 {
     return input_state.mouse.previous_key_state[mouse_button];
 }
@@ -231,7 +231,7 @@ b8 input_system_mouse_is_dragging()
 
 // MISC
 
-const char* input_system_keycode_str(keycode_t keycode)
+const char* input_system_keycode_str(keycode keycode)
 {
     switch (keycode)
     {

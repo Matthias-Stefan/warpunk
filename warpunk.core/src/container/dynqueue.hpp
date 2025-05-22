@@ -5,7 +5,7 @@
 
 /** */
 template<typename T>
-struct dynqueue_s
+struct dynqueue
 {
     s64 size;
     s64 capacity;
@@ -16,14 +16,14 @@ struct dynqueue_s
 
 /** */
 template<typename T>
-warpunk_api inline dynqueue_s<T> dynqueue_create(s64 size)
+warpunk_api inline dynqueue<T> dynqueue_create(s64 size)
 {
     if (size <= 0)
     {
         size = 1;
     }
 
-    dynqueue_s<T> queue = {};
+    dynqueue<T> queue = {};
     queue.size = size;
     queue.capacity = 0;
     queue.data = (T *)platform_memory_alloc(sizeof(T) * size);
@@ -35,7 +35,7 @@ warpunk_api inline dynqueue_s<T> dynqueue_create(s64 size)
 
 /** */
 template<typename T>
-warpunk_api inline void dynqueue_destroy(dynqueue_s<T>* queue)
+warpunk_api inline void dynqueue_destroy(dynqueue<T>* queue)
 {
     platform_memory_free(queue->data);
     queue->size = 0;
@@ -47,7 +47,7 @@ warpunk_api inline void dynqueue_destroy(dynqueue_s<T>* queue)
 
 /** */
 template<typename T>
-warpunk_api inline b8 dynqueue_enqueue(dynqueue_s<T>* queue, T element)
+warpunk_api inline b8 dynqueue_enqueue(dynqueue<T>* queue, T element)
 {
     queue->data[queue->tail] = element;
     queue->capacity++;
@@ -84,7 +84,7 @@ warpunk_api inline b8 dynqueue_enqueue(dynqueue_s<T>* queue, T element)
 
 /** */
 template<typename T>
-warpunk_api inline T dynqueue_dequeue(dynqueue_s<T>* queue)
+warpunk_api inline T dynqueue_dequeue(dynqueue<T>* queue)
 {
     if (queue->head == queue->tail)
     {
@@ -100,7 +100,7 @@ warpunk_api inline T dynqueue_dequeue(dynqueue_s<T>* queue)
 
 /** */
 template<typename T>
-warpunk_api inline void dynqueue_clear(dynqueue_s<T>* queue)
+warpunk_api inline void dynqueue_clear(dynqueue<T>* queue)
 {
     platform_memory_zero(queue->data, sizeof(T) * queue->size);
     queue->capacity = 0;
@@ -110,7 +110,7 @@ warpunk_api inline void dynqueue_clear(dynqueue_s<T>* queue)
 
 /** */
 template<typename T>
-warpunk_api inline T* dynqueue_first(dynqueue_s<T>* queue, s64 offset=0)
+warpunk_api inline T* dynqueue_first(dynqueue<T>* queue, s64 offset=0)
 {
     s64 index = (queue->head + offset) % queue->size;
     return &queue->data[index];
@@ -118,7 +118,7 @@ warpunk_api inline T* dynqueue_first(dynqueue_s<T>* queue, s64 offset=0)
 
 /** */
 template<typename T>
-warpunk_api inline T* dynqueue_last(dynqueue_s<T>* queue, s64 offset=0)
+warpunk_api inline T* dynqueue_last(dynqueue<T>* queue, s64 offset=0)
 {
     s64 index = (queue->head + queue->capacity - 1 + offset) % queue->size;
     return &queue->data[index];

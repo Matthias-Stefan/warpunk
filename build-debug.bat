@@ -4,66 +4,72 @@ setlocal enabledelayedexpansion
 :: Get script directory
 set "SCRIPT_PATH=%~dp0"
 set "SCRIPT_DIR=%SCRIPT_PATH:~0,-1%"
-
-:: Output directories
 set "DEBUG_DIR=%SCRIPT_DIR%\bin\debug"
 
-:: Ensure output directories exist
+:: Create output directory
 if not exist "%DEBUG_DIR%" (
     mkdir "%DEBUG_DIR%"
 )
 
-:: Compiler and flags
+:: Compiler settings
 set "CXX=clang++"
-set "CXXFLAGS=-std=c++17 -Werror -Wunused-function -g -O0 -DWARPUNK_EXPORT=1 -fvisibility=hidden -DVK_DISABLE_VIDEO"
-set "INCLUDES=-I%SCRIPT_DIR% -I%SCRIPT_DIR%\warpunk.core -IC:\VulkanSDK\1.4.309.0\Include"
+set "CXXFLAGS=-std=c++17 -g -O0 -Wall -Wextra -Werror -Wno-error=deprecated-declarations -Wno-error=unused-function -Wvla -Wgnu-folding-constant -Wno-missing-braces -fdeclspec -Wstrict-prototypes -Wno-unused-parameter -Wno-missing-field-initializers -DWARPUNK_EXPORT=1 -DVK_DISABLE_VIDEO"
+set "INCLUDES=-I%SCRIPT_DIR% -I%SCRIPT_DIR%\warpunk.core -I%SCRIPT_DIR%\warpunk.runtime"
 
-:: Compile main.cpp
-echo Compiling main.cpp...
-%CXX% %CXXFLAGS% %INCLUDES% -c main.cpp -o bin\debug\main.o
-if errorlevel 1 (
-    echo Compilation failed for main.cpp
-    exit /b 1
-)
+:: Vulkan SDK Setup
+set "VULKAN_SDK=C:\VulkanSDK\1.4.313.0"
+set "INCLUDES=%INCLUDES% -I%VULKAN_SDK%\Include"
+set "LIBS=-L%VULKAN_SDK%\Lib -lvulkan-1"
 
-:: Compile all .cpp files in warpunk.core
-set "WARPUNK_O_FILES="
+echo ---------------------------------------------------
+echo Building warpunk.core (DLL)
+echo ---------------------------------------------------
+set "CORE_OBJS="
 for /R "%SCRIPT_DIR%\warpunk.core" %%F in (*.cpp) do (
-    set "SRC_FILE=%%F"
-    set "RELATIVE_PATH=%%~pnxF"
-    set "RELATIVE_PATH=!RELATIVE_PATH:%SCRIPT_DIR%\=!"
-    set "OBJECT_FILE=%DEBUG_DIR%\!RELATIVE_PATH:.cpp=.o!"
-
-    echo Compiling !RELATIVE_PATH!...
-    if not exist "!OBJECT_FILE!\.." (
-        mkdir "!OBJECT_FILE!\.."
-    )
-    %CXX% %CXXFLAGS% %INCLUDES% -c "%%F" -o "!OBJECT_FILE!"
-    if errorlevel 1 (
-        echo Compilation failed for !RELATIVE_PATH!
-        exit /b 1
-    )
-    set "WARPUNK_O_FILES=!WARPUNK_O_FILES! !OBJECT_FILE!"
+    set "OBJ=%DEBUG_DIR%\warpunk.core\%%~nF.o"
+    if not exist "%DEBUG_DIR%\warpunk.core" mkdir "%DEBUG_DIR%\warpunk.core"
+    echo Compiling %%F...
+    %CXX% %CXXFLAGS% %INCLUDES% -c "%%F" -o "!OBJ!"
+    if errorlevel 1 exit /b 1
+    set "CORE_OBJS=!CORE_OBJS! !OBJ!"
 )
+%CXX% -g -shared -o %DEBUG_DIR%\warpunk.core.dll !CORE_OBJS! %LIBS% -luser32 -lgdi32 -lwinmm
+if errorlevel 1 exit /b 1
 
-:: Compile shared library
-echo Compiling magicians_misfits into a shared library...
-%CXX% -std=c++17 -g -O0 -I./ -shared magicians_misfits\magicians_misfits.cpp -o bin\debug\magicians_misfits.dll
-if errorlevel 1 (
-    echo Compilation failed for magicians_misfits
-    exit /b 1
+echo.
+echo ---------------------------------------------------
+echo Building warpunk.runtime (DLL)
+echo ---------------------------------------------------
+set "RUNTIME_OBJS="
+for /R "%SCRIPT_DIR%\warpunk.runtime" %%F in (*.cpp) do (
+    set "OBJ=%DEBUG_DIR%\warpunk.runtime\%%~nF.o"
+    if not exist "%DEBUG_DIR%\warpunk.runtime" mkdir "%DEBUG_DIR%\warpunk.runtime"
+    echo Compiling %%F...
+    %CXX% %CXXFLAGS% %INCLUDES% -c "%%F" -o "!OBJ!"
+    if errorlevel 1 exit /b 1
+    set "RUNTIME_OBJS=!RUNTIME_OBJS! !OBJ!"
 )
+%CXX% -g -shared -o %DEBUG_DIR%\warpunk.runtime.dll !RUNTIME_OBJS! ^
+    -Wl,/implib:%DEBUG_DIR%\warpunk.runtime.lib ^
+    -L%DEBUG_DIR% -lwarpunk.core %LIBS% -luser32 -lgdi32
+if errorlevel 1 exit /b 1
 
-:: Link the final executable
-echo Linking object files into the final executable...
-%CXX% -std=c++17 -g -o bin\debug\warpunk.exe bin\debug\main.o %WARPUNK_O_FILES% -lvulkan-1 -ldl -luser32 -lgdi32
+echo.
+echo ---------------------------------------------------
+echo Building magicians_misfits (EXE)
+echo ---------------------------------------------------
+set "GAME_SRC=%SCRIPT_DIR%\magicians_misfits\magicians_misfits.cpp"
+set "GAME_OBJ=%DEBUG_DIR%\magicians_misfits.o"
+%CXX% %CXXFLAGS% -DWARPUNK_IMPORT=1 %INCLUDES% -c "%GAME_SRC%" -o "%GAME_OBJ%"
+if errorlevel 1 exit /b 1
 
-:: Check build result
-if %errorlevel%==0 (
-    echo Build successful!
-    echo Executable is located at: bin\debug\warpunk.exe
-    echo Shared library is located at: bin\debug\magicians_misfits.dll
-) else (
-    echo Build failed.
-    exit /b 1
-)
+%CXX% -g -o %DEBUG_DIR%\magicians_misfits.exe "%GAME_OBJ%" ^
+    -L%DEBUG_DIR% -lwarpunk.core -lwarpunk.runtime %LIBS% -luser32 -lgdi32
+if errorlevel 1 exit /b 1
+
+echo.
+echo ---------------------------------------------------
+echo Build erfolgreich!
+echo Engine DLLs in: %DEBUG_DIR%
+echo Game EXE in:    %DEBUG_DIR%\magicians_misfits.exe
+echo ---------------------------------------------------

@@ -8,22 +8,22 @@
 #include <type_traits>
 
 template<typename T>
-struct hit_record_s
+struct hit_record
 {
-    p3_s<T> pos;
-    v3_s<T> normal;
+    p3<T> pos;
+    v3<T> normal;
     f64 t;
     b8 front_face;
-    material_s<T>* material;
+    material<T>* material;
 };
 
 
 template<typename T>
-struct sphere_s
+struct sphere
 {
-    p3_s<T> center;
+    p3<T> center;
     f64 radius;
-    material_s<T>* material;
+    material<T>* material;
 };
 
 /** 
@@ -31,20 +31,20 @@ struct sphere_s
  * NOTE: the parameter `outward_normal` is assumed to have unit length 
  */
 template<typename T>
-inline void set_face_normal(hit_record_s<T>* hit_record, const ray_s<T>* ray, const v3_s<T>* outward_normal)
+inline void set_face_normal(hit_record<T>* hit_record, const ray<T>* ray, const v3<T>* outward_normal)
 {
     hit_record->front_face = dot(ray->dir, *outward_normal) < 0;
     hit_record->normal = hit_record->front_face ? *outward_normal : -(*outward_normal);
 }
 
-template<typename S, typename T, typename std::enable_if<!std::is_same<S, sphere_s<T>>::value>::type* = nullptr>
-inline b8 hit(const S* object, ray_s<T>* ray, interval_s<T> interval, hit_record_s<T>* out_hit_record) = delete;
+template<typename S, typename T, typename std::enable_if<!std::is_same<S, sphere<T>>::value>::type* = nullptr>
+inline b8 hit(const S* object, ray<T>* ray, interval<T> interval, hit_record<T>* out_hit_record) = delete;
 
 /** */
-template<typename S, typename T, typename std::enable_if<std::is_same<S, sphere_s<T>>::value>::type* = nullptr>
-inline b8 hit(const S* sphere, ray_s<T>* ray, interval_s<T> interval, hit_record_s<T>* out_hit_record)
+template<typename S, typename T, typename std::enable_if<std::is_same<S, sphere<T>>::value>::type* = nullptr>
+inline b8 hit(const S* sphere, ray<T>* ray, interval<T> interval, hit_record<T>* out_hit_record)
 {
-    v3f64_s oc = sphere->center - ray->origin;
+    v3f64 oc = sphere->center - ray->origin;
     auto a = length_squared(ray->dir);
     auto h = dot(ray->dir, oc);
     auto c = length_squared(oc) - sphere->radius * sphere->radius;
@@ -74,7 +74,7 @@ inline b8 hit(const S* sphere, ray_s<T>* ray, interval_s<T> interval, hit_record
 
     out_hit_record->t = root;
     out_hit_record->pos = at(ray, out_hit_record->t);
-    v3_s<T> outward_normal = (out_hit_record->pos - sphere->center) / sphere->radius;
+    v3<T> outward_normal = (out_hit_record->pos - sphere->center) / sphere->radius;
     set_face_normal(out_hit_record, ray, &outward_normal);
     out_hit_record->material = sphere->material;
 

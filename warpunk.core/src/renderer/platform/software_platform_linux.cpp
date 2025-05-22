@@ -8,7 +8,7 @@
 #include "warpunk.core/src/platform/platform.h"
 #include "warpunk.core/src/platform/platform_linux.h"
 
-linux_handle_s handle;
+linux_handle handle;
 xcb_pixmap_t pixmap;
 xcb_gcontext_t gcontext;
 

@@ -3,6 +3,10 @@
 
 #include "warpunk.core/src/platform/platform.h"
 #include "warpunk.core/src/platform/platform_linux.h"
+#include "warpunk.core/src/input_system/input_types.h"
+#include "warpunk.core/src/container/stcqueue.hpp"
+#include "warpunk.core/src/container/dynqueue.hpp"
+#include "warpunk.core/src/container/dynarray.hpp"
 
 #include <cassert>
 #include <cstdlib>
@@ -22,11 +26,6 @@
 #include <X11/XKBlib.h>
 #include <X11/keysym.h>
 #include <X11/keysymdef.h>
-
-#include "warpunk.core/src/input_system/input_types.h"
-#include "warpunk.core/src/container/stcqueue.hpp"
-#include "warpunk.core/src/container/dynqueue.hpp"
-#include "warpunk.core/src/container/dynarray.hpp"
 
 //////////////////////////////////////////////////////////////////////
 
@@ -49,47 +48,47 @@
 
 #define PLATFORM_THREADPOOL_THREAD_COUNT 32
 
-static keycode_t translate_keycode(const unsigned int key_code);
+static keycode translate_keycode(const unsigned int key_code);
 static void* platform_thread_main_routine(void* args);
 
 //////////////////////////////////////////////////////////////////////
 
-typedef struct _thread_handle_s
+typedef struct thread_handle
 {
-    thread_ticket_t ticket;
+    thread_ticket ticket;
     s32 thread_idx;
-} thread_handle_s;
+} thread_handle;
 
-typedef struct _thread_context_s
+typedef struct thread_context
 {
-    dynarray_s<pthread_t> threads;
-    dynarray_s<platform_threading_job_t> jobs;
-    dynarray_s<thread_handle_s> handles;
+    dynarray<pthread_t> threads;
+    dynarray<platform_threading_job> jobs;
+    dynarray<thread_handle> handles;
     s64 active_thread_count;
     pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER; 
-} thread_context_s;
+} thread_context;
 
-typedef struct _linux_state_s
+typedef struct linux_state
 {
     Display* display;
-    linux_handle_s handle;
+    linux_handle handle;
 
     pthread_mutex_t mutex;
     b8 thread_ticket_free_list[64] = { true };
-    thread_context_s thread_contexts[64];
+    thread_context thread_contexts[64];
 
 
     platform_keyboard_event_t keyboard_event;
     platform_mouse_button_event_t mouse_button_event;
     platform_mouse_move_event_t mouse_move_event;
     platform_mouse_wheel_event_t mouse_wheel_event;
-} linux_state_s;
+} linux_state;
 
 //////////////////////////////////////////////////////////////////////
 
 // NOTE: Global
 
-static linux_state_s linux_state;
+static linux_state linux_state;
 
 //////////////////////////////////////////////////////////////////////
 
@@ -131,7 +130,7 @@ b8 platform_result_is_success(xcb_void_cookie_t cookie)
     return true;
 }
 
-b8 platform_get_linux_handle(linux_handle_s *out_linux_handle)
+b8 platform_get_linux_handle(linux_handle *out_linux_handle)
 {
     if (linux_state.handle.connection == nullptr || linux_state.handle.window == 0 || linux_state.handle.screen == nullptr)
     {
@@ -244,9 +243,9 @@ void platform_process_input()
             {
                 xcb_key_press_event_t* key_event = reinterpret_cast<xcb_key_press_event_t*>(event);
                 b8 pressed = key_event->response_type == XCB_KEY_PRESS; 
-                xcb_keycode_t code = key_event->detail;
+                xcb_keycode code = key_event->detail;
                 KeySym key_sym = XkbKeycodeToKeysym(linux_state.display, code, 0, 0);
-                keycode_t keycode = translate_keycode(key_sym);
+                keycode keycode = translate_keycode(key_sym);
 
                 linux_state.keyboard_event(keycode, pressed);
                 
@@ -261,7 +260,7 @@ void platform_process_input()
             {
                 xcb_button_press_event_t* mouse_event = reinterpret_cast<xcb_button_press_event_t*>(event);
                 b8 pressed = mouse_event->response_type == XCB_BUTTON_PRESS;
-                mouse_button_t mouse_button = {}; 
+                mouse_button mouse_button = {}; 
                 switch (mouse_event->detail)
                 {
                     case PLATFORM_MOUSE_BUTTON_LEFT:
@@ -386,18 +385,18 @@ void platform_process_input()
 
 b8 platform_get_window_handle(s32* out_size, void* out_platform_handle)
 {
-    *out_size = sizeof(linux_handle_s);
+    *out_size = sizeof(linux_handle);
     if (!out_platform_handle)
     {
         return false; 
     }
 
     // TODO: Platform allocation methods 
-    memcpy(out_platform_handle, &linux_state.handle, sizeof(linux_handle_s));
+    memcpy(out_platform_handle, &linux_state.handle, sizeof(linux_handle));
     return true;
 }
 
-b8 platform_load_library(const char* path, library_context_s* out_library_context)
+b8 platform_load_library(const char* path, library_context* out_library_context)
 {
     void* library_handle = dlopen(path, RTLD_NOW);
     if (!library_handle)
@@ -410,7 +409,7 @@ b8 platform_load_library(const char* path, library_context_s* out_library_contex
     return true;
 }
 
-b8 platform_unload_library(library_context_s* library_context)
+b8 platform_unload_library(library_context* library_context)
 {
     if (dlclose(library_context->handle) != 0)
     {
@@ -418,7 +417,7 @@ b8 platform_unload_library(library_context_s* library_context)
         return false;
     }
 
-    for (function_description_s* function_description : library_context->functions)
+    for (function_description* function_description : library_context->functions)
     {
         function_description->function = nullptr;
         function_description->is_dirty = true;
@@ -429,7 +428,7 @@ b8 platform_unload_library(library_context_s* library_context)
     return true;
 }
 
-b8 platform_get_function(library_context_s* library_context, function_description_s* out_function_description)
+b8 platform_get_function(library_context* library_context, function_description* out_function_description)
 {
     out_function_description->function = dlsym(library_context->handle, out_function_description->name);
     if (!out_function_description->function)
@@ -481,7 +480,7 @@ b8 platform_is_mouse_inside_window()
     return inside;
 }
 
-b8 platform_set_window_mode(platform_window_mode_e platform_window_mode)
+b8 platform_set_window_mode(platform_window_mode platform_window_mode)
 {
     xcb_connection_t* connection = linux_state.handle.connection;
     xcb_window_t window = linux_state.handle.window;
@@ -538,11 +537,11 @@ b8 platform_set_window_mode(platform_window_mode_e platform_window_mode)
     return true;
 }
 
-b8 platform_get_window_info(platform_window_info_s* platform_window_info)
+b8 platform_get_window_info(platform_window_info* platform_window_info)
 {
     if (!platform_window_info)
     {
-        fprintf(stderr, "Failed to provide window info! platform_window_info_s is nullptr.\n");
+        fprintf(stderr, "Failed to provide window info! platform_window_info is nullptr.\n");
         return false;
     }
 
@@ -687,9 +686,9 @@ void platform_memory_zero(void* dst, s64 size)
 
 static void* platform_thread_main_routine(void* args)
 {
-    thread_handle_s* handle = (thread_handle_s *)args;
-    thread_context_s* thread_context = &linux_state.thread_contexts[handle->ticket];
-    platform_threading_job_t* job = (platform_threading_job_t *)&thread_context->jobs.data[handle->thread_idx]; 
+    thread_handle* handle = (thread_handle *)args;
+    thread_context* thread_context = &linux_state.thread_contexts[handle->ticket];
+    platform_threading_job* job = (platform_threading_job *)&thread_context->jobs.data[handle->thread_idx]; 
 
     if (job != nullptr && job->function != nullptr)
     {
@@ -713,11 +712,11 @@ static void* platform_thread_main_routine(void* args)
     return nullptr;
 }
 
-void platform_threadpool_add(platform_threading_job_t* jobs, u32 chunk_count, thread_ticket_t* out_ticket)
+void platform_threadpool_add(platform_threading_job* jobs, u32 chunk_count, thread_ticket* out_ticket)
 {
     pthread_mutex_lock(&linux_state.mutex);
     b8 found = false;
-    thread_ticket_t ticket_idx;
+    thread_ticket ticket_idx;
     for (ticket_idx = 0; ticket_idx < 64; ++ticket_idx)
     {
         if (linux_state.thread_ticket_free_list[ticket_idx] == true)
@@ -734,19 +733,19 @@ void platform_threadpool_add(platform_threading_job_t* jobs, u32 chunk_count, th
 
     *out_ticket = ticket_idx;
 
-    thread_context_s* thread_context = &linux_state.thread_contexts[ticket_idx];
+    thread_context* thread_context = &linux_state.thread_contexts[ticket_idx];
     if (thread_context->threads.data == nullptr)
     {
         thread_context->threads = dynarray_create<pthread_t>(chunk_count);
     }
     dynarray_clear(&thread_context->threads);
-    thread_context->jobs = dynarray_create<platform_threading_job_t>(chunk_count);
-    thread_context->handles = dynarray_create<thread_handle_s>(chunk_count);
+    thread_context->jobs = dynarray_create<platform_threading_job>(chunk_count);
+    thread_context->handles = dynarray_create<thread_handle>(chunk_count);
     thread_context->active_thread_count = chunk_count;
     
     for (s32 job_idx = 0; job_idx < chunk_count; ++job_idx)
     {
-        platform_threading_job_t job = {};
+        platform_threading_job job = {};
         job.function = jobs->function;
         job.arg_size = jobs->arg_size;
         job.arg = platform_memory_alloc(jobs->arg_size);
@@ -764,9 +763,9 @@ void platform_threadpool_add(platform_threading_job_t* jobs, u32 chunk_count, th
     pthread_mutex_unlock(&linux_state.mutex);
 }
  
-void platform_threadpool_sync(thread_ticket_t ticket, f64 cancellation_time)
+void platform_threadpool_sync(thread_ticket ticket, f64 cancellation_time)
 {
-    thread_context_s* thread_context = &linux_state.thread_contexts[ticket];
+    thread_context* thread_context = &linux_state.thread_contexts[ticket];
     for (s32 thread_idx = 0; thread_idx < thread_context->threads.size; ++thread_idx)
     {
         pthread_join(thread_context->threads.data[thread_idx], nullptr);
@@ -797,7 +796,7 @@ void platform_register_mouse_wheel_event(platform_mouse_wheel_event_t callback)
     linux_state.mouse_wheel_event = callback;
 }
 
-static keycode_t translate_keycode(const unsigned int key_code)
+static keycode translate_keycode(const unsigned int key_code)
 {
     switch (key_code)
     {

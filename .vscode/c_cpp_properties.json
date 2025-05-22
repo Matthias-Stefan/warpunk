@@ -8,7 +8,6 @@
                 "_DEBUG",
                 "UNICODE",
                 "_UNICODE",
-                "KEXPORT",
                 "_GNU_SOURCE"
             ],
             "compilerPath": "/usr/bin/clang++",
@@ -30,8 +29,7 @@
             "defines": [
                 "_DEBUG",
                 "UNICODE",
-                "_UNICODE",
-                "KEXPORT"
+                "_UNICODE"
             ],
             "compilerPath": "/usr/bin/clang",
             "cStandard": "c17",
@@ -41,12 +39,16 @@
         {
             "name": "Win32",
             "includePath": [
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/warpunk.core/src",
+                "${workspaceFolder}/warpunk.runtime/src",
+                "${workspaceFolder}/magicians_misfits",
+                "C:/VulkanSDK/1.4.313.0/Include"
             ],
             "defines": [
                 "_DEBUG",
                 "UNICODE",
-                "_UNICODE",
-                "KEXPORT"
+                "_UNICODE"
             ],
             "windowsSdkVersion": "10.0.18362.0",
             "compilerPath": "C:\\Program Files\\LLVM\\bin\\clang.exe",

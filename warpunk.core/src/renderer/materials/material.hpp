@@ -5,28 +5,28 @@
 #include "warpunk.core/src/math/ray.hpp"
 
 template<typename T>
-struct hit_record_s;
+struct hit_record;
 
-typedef enum _material_type_e
+typedef enum material_type
 {
     LAMBERT,
     METAL,
     DIELECTRIC,
-} material_type_e;
+} material_type;
 
 template<typename T>
-struct material_s 
+struct material 
 {
-    material_type_e type;    
+    material_type type;    
     T fuzz {};
-    v3_s<T> albedo;
+    v3<T> albedo;
     f64 refraction_index;
 };
 
 template<typename T>
-inline b8 scatter(material_s<T>* material, 
-        ray_s<T>* ray, hit_record_s<T>* record, 
-        v3_s<T>* out_attenuation, ray_s<T>* out_scattered)
+inline b8 scatter(material<T>* material, 
+        ray<T>* r, hit_record<T>* record, 
+        v3<T>* out_attenuation, ray<T>* out_scattered)
 {
     if (material)
     {
@@ -42,16 +42,16 @@ inline b8 scatter(material_s<T>* material,
                     scatter_direction = record->normal;
                 }
 
-                *out_scattered = ray_s<T> { record->pos, scatter_direction };
+                *out_scattered = ray<T> { record->pos, scatter_direction };
                 *out_attenuation = material->albedo;
                 return true;
             }
 
             case METAL:
             {
-                auto reflected = reflect(ray->dir, record->normal);
+                auto reflected = reflect(r->dir, record->normal);
                 reflected = unit_vector(reflected) + (material->fuzz * random_unit_vector<T>());
-                *out_scattered = ray_s<T> { record->pos, reflected };
+                *out_scattered = ray<T> { record->pos, reflected };
                 *out_attenuation = material->albedo;
                 return (dot(out_scattered->dir, record->normal) > 0);
             }
@@ -60,12 +60,12 @@ inline b8 scatter(material_s<T>* material,
                 *out_attenuation = { 1.0, 1.0, 1.0 };
                 f64 ri = record->front_face ? (1.0 / material->refraction_index) : material->refraction_index; 
                 
-                v3_s<T> unit_dir = unit_vector(ray->dir);
+                v3<T> unit_dir = unit_vector(r->dir);
                 f64 cos_theta = std::fmin(dot(-unit_dir, record->normal), 1.0);
                 f64 sin_theta = std::sqrt(1.0 - cos_theta * cos_theta);
 
                 b8 cannot_refract = ri * sin_theta > 1.0;
-                v3_s<T> direction;
+                v3<T> direction;
                 if (cannot_refract)
                 {
                     direction = reflect(unit_dir, record->normal);
@@ -75,7 +75,7 @@ inline b8 scatter(material_s<T>* material,
                     direction = refract(unit_dir, record->normal, ri);
                 }
 
-                *out_scattered = ray_s<T> { record->pos, direction };
+                *out_scattered = ray<T> { record->pos, direction };
                 return true;
             }
         }

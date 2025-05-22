@@ -1,6 +1,6 @@
 #pragma once
 
-typedef enum _mouse_button_t
+typedef enum mouse_button
 {
     MOUSE_BUTTON_LEFT,
     MOUSE_BUTTON_RIGHT,
@@ -19,9 +19,9 @@ typedef enum _mouse_button_t
     MOUSE_WHEEL_RIGHT,
     
     MOUSE_BUTTON_COUNT
-} mouse_button_t;
+} mouse_button;
 
-typedef enum _keycode_t
+typedef enum keycode
 {
     KEY_ESCAPE,
     KEY_F1,
@@ -119,6 +119,6 @@ typedef enum _keycode_t
     KEY_Z,
 
     KEYCODE_COUNT,
-} keycode_t;
+} keycode;
 
 
