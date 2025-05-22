@@ -1,12 +1,12 @@
 #undef WARPUNK_EXPORT
 
-#include <warpunk.core/platform//platform.h>
-#include <warpunk.core/input_system/input_system.h>
+#include <warpunk.core/src/platform//platform.h>
+#include <warpunk.core/src/input_system/input_system.h>
 #include <cstdio>
 #include <cassert>
 
-#include <warpunk.core/container/dynarray.hpp>
-#include <warpunk.core/container/dynqueue.hpp>
+#include <warpunk.core/src/container/dynarray.hpp>
+#include <warpunk.core/src/container/dynqueue.hpp>
 
 typedef struct _test_data_s
 {

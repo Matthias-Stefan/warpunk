@@ -36,7 +36,7 @@ done
 
 # Compile the game into a shared library (DLL or .so)
 echo "Compiling magicians_misfits into a shared library..."
-clang++ -std=c++17 -g -O0 -I./ -shared -fPIC magicians_misfits/magicians_misfits.cpp -o bin/debug/magicians_misfits.so
+clang++ -std=c++17 -g -gdwarf-5 -O0 -I./ -shared -fPIC magicians_misfits/magicians_misfits.cpp -o bin/debug/magicians_misfits.so
 
 # Link the engine object files into the final executable
 echo "Linking object files into the final executable..."
