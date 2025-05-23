@@ -1,7 +1,8 @@
 #include "warpunk.runtime/src/core/engine.h"
 
-#include <warpunk.core/src/time/runtime_clock.h>
 #include <warpunk.core/src/platform/platform.h>
+#include <warpunk.core/src/renderer/renderer_backend.h>
+#include <warpunk.core/src/time/runtime_clock.h>
 
 typedef struct engine_state
 {
@@ -19,6 +20,21 @@ struct engine_state state = {};
 b8 engine_create(struct application* app)
 {
     state.is_running = true;
+
+    // Renderer system
+    {
+        // TODO: Later from the config
+        renderer_config config = {};
+        config.type = RENDERER_TYPE_VULKAN;
+        config.width = 1920 / 2;
+        config.aspect_ratio = 16.0 / 9.0;
+        config.flags = RENDERER_CONFIG_FLAG_VSYNC_ENABLED_BIT;
+        if (!renderer_startup(config))
+        {
+            WERROR("Failed to initialize renderer system.");
+            return false;
+        }
+    }
 
     return true;
 }

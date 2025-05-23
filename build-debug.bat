@@ -20,7 +20,7 @@ set "CXXFLAGS=-std=c++17 -g -gcodeview -O0 -Wall -Wextra ^
 -Wno-error=deprecated-declarations -Wno-error=unused-function ^
 -Wvla -Wgnu-folding-constant -Wno-missing-braces -fdeclspec ^
 -Wstrict-prototypes -Wno-unused-parameter -Wno-missing-field-initializers ^
--DVK_DISABLE_VIDEO -D_CRT_SECURE_NO_WARNINGS"
+-DVK_DISABLE_VIDEO -D_CRT_SECURE_NO_WARNINGS -DWARPUNK_DEBUG"
 
 set "INCLUDES=-I%SCRIPT_DIR% -I%SCRIPT_DIR%\warpunk.core -I%SCRIPT_DIR%\warpunk.runtime"
 

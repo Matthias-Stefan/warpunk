@@ -4,7 +4,8 @@
 
 typedef struct engine_system_states
 {
-    
+    u64 renderer_system_memory_requirement;
+    struct renderer_system_state* renderer_system;
 } engine_system_states;
 
 /** */

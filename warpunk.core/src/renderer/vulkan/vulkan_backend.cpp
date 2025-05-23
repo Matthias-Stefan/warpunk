@@ -24,11 +24,11 @@ namespace vulkan_renderer
                                           const VkPhysicalDeviceProperties* properties,
                                           const VkPhysicalDeviceFeatures* features,
                                           const vulkan_physical_device_requirements_s* requirements,
-                                          vulkan_queue_family_indices_s* out_queue_family_indices);
+                                          vulkan_queue_family_indices* out_queue_family_indices);
 
-    static vulkan_state_s state;
+    static vulkan_state state;
 
-    b8 renderer_startup(renderer_config_s renderer_config)
+    b8 renderer_startup(renderer_config renderer_config)
     {
         if (state.is_initialized)
         {
@@ -92,7 +92,7 @@ namespace vulkan_renderer
 
         if (!vulkan_platform_create_surface(state.instance, NULL, &state.surface))
         {
-            fprintf(stderr, "Failed to create surface.\n");
+            WERROR("Failed to create surface.");
             return false;
         }
         
@@ -211,7 +211,7 @@ namespace vulkan_renderer
         device_features2.features.shaderClipDistance = state.physical_device_features.shaderClipDistance;
         if (!device_features2.features.shaderClipDistance)
         {
-            fprintf(stderr, "shaderClipDistance not supported by device.\n");
+            WERROR("shaderClipDistance not supported by device.");
             return false;
         }
         
@@ -259,7 +259,7 @@ namespace vulkan_renderer
         dynarray_destroy(&device_extension_properties);
         dynarray_destroy(&device_extension_names);
 
-        fprintf(stderr, "logical device created.\n");
+        WINFO("logical device created.");
 
         vkGetDeviceQueue(state.device, 
                          state.queue_family_indices.graphics_queue_index, 
@@ -277,7 +277,7 @@ namespace vulkan_renderer
                          0, 
                          &state.transfer_queue);
 
-        fprintf(stderr, "queues obtained.\n");
+        WINFO("queues obtained.");
 
         VkCommandPoolCreateInfo command_pool_create_info = { 
             .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
@@ -292,13 +292,14 @@ namespace vulkan_renderer
                     0,
                     &state.command_pool));
 
-        fprintf(stderr, "graphics command pool created.\n");
+        WINFO("graphics command pool created.");
 
-        vulkan_swapchain_s swapchain;
+        vulkan_swapchain swapchain;
         if (!vulkan_swapchain_create(
                     &state, 
                     &state.swapchain_support, 
-                    renderer_config.width, renderer_config.width / renderer_config.aspect_ratio,  
+                    renderer_config.width, 
+                    renderer_config.width / renderer_config.aspect_ratio,  
                     &swapchain))
         {
 
@@ -317,7 +318,7 @@ namespace vulkan_renderer
 
 
     void renderer_device_query_swapchain_support(
-            vulkan_swapchain_support_info_s* out_swapchain_support)
+            vulkan_swapchainupport_info* out_swapchain_support)
     {
         // surface capabilities
         vulkan_eval_result(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(state.physical_device, state.surface, &out_swapchain_support->capabilities));        
@@ -385,13 +386,13 @@ namespace vulkan_renderer
 
     static b8 select_physical_device(const vulkan_physical_device_requirements_s* requirements)
     {
-        fprintf(stderr, "[1] Start selection of physical device.\n");
+        WINFO("[1] Start selection of physical device.");
 
         u32 device_count = 0;
         vkEnumeratePhysicalDevices(state.instance, &device_count, nullptr);
         if (device_count == 0)
         {
-            fprintf(stderr, "No Vulkan-compatible physical devices found.\n");
+            WERROR("No Vulkan-compatible physical devices found.");
             return false;
         }
         dynarray<VkPhysicalDevice> physical_devices = dynarray_create<VkPhysicalDevice>(device_count);
@@ -423,38 +424,37 @@ namespace vulkan_renderer
             VkPhysicalDeviceMemoryProperties memory = {};
             vkGetPhysicalDeviceMemoryProperties(physical_devices.data[device_index], &memory);
             
+            WINFO("Evaluating device: '%s', index %u.", properties.deviceName, device_index);
 
-            fprintf(stderr, "Evaluating device: '%s', index %u.\n", properties.deviceName, device_index);
-
-            vulkan_queue_family_indices_s queue_family_indices = {};
+            vulkan_queue_family_indices queue_family_indices = {};
             b8 is_suitable = physical_device_is_suitable(physical_devices.data[device_index], 
                     &properties, &features, requirements, &queue_family_indices);
 
             if (is_suitable)
             {
-                fprintf(stderr, "Selected device: %s\n", properties.deviceName);
+                WINFO("Selected device: %s.", properties.deviceName);
                 switch (properties.deviceType) 
                 {
                     default:
                     case VK_PHYSICAL_DEVICE_TYPE_OTHER:
                     {
-                        fprintf(stderr, "GPU type is Unknown.\n");
+                        WWARNING("GPU type is Unknown.");
                     } break;
                     case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
                     {   
-                        fprintf(stderr, "GPU type is Integrated GPU.\n");
+                        WINFO("GPU type is Integrated GPU.");
                     } break;
                     case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:
                     {
-                        fprintf(stderr, "GPU type is Discrete GPU.\n");
+                        WINFO("GPU type is Discrete GPU.");
                     } break;
                     case VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU:
                     {
-                        fprintf(stderr, "GPU type is Virtual GPU.\n");
+                        WINFO("GPU type is Virtual GPU.");
                     } break;
                     case VK_PHYSICAL_DEVICE_TYPE_CPU:
                     {
-                        fprintf(stderr, "GPU type is CPU.\n");
+                        WINFO("GPU type is CPU.");
                     } break;
                 }
 
@@ -464,22 +464,21 @@ namespace vulkan_renderer
                 state.api_patch = VK_VERSION_PATCH(properties.apiVersion);;
 
                 // Vulkan API version.
-                fprintf(stderr,
-                    "Vulkan API version: %d.%d.%d",
-                    state.api_major,
-                    state.api_minor,
-                    state.api_minor);
+                WINFO("Vulkan API version: %d.%d.%d",
+                      state.api_major,
+                      state.api_minor,
+                      state.api_minor);
 
                 for (u32 heap_index = 0; heap_index < memory.memoryHeapCount; ++heap_index) 
                 {
                     f32 memory_size_gib = (((f32)memory.memoryHeaps[heap_index].size) / 1024.0f / 1024.0f / 1024.0f);
                     if (memory.memoryHeaps[heap_index].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) 
                     {
-                        fprintf(stderr, "Local GPU memory: %.2f GiB", memory_size_gib);
+                        WINFO("Local GPU memory: %.2f GiB", memory_size_gib);
                     } 
                     else 
                     {
-                        fprintf(stderr, "Shared System memory: %.2f GiB", memory_size_gib);
+                        WINFO("Shared System memory: %.2f GiB", memory_size_gib);
                     }
                 }
     
@@ -516,11 +515,11 @@ namespace vulkan_renderer
         dynarray_destroy(&physical_devices);
         if (state.physical_device == VK_NULL_HANDLE)
         {
-            fprintf(stderr, "No suitable Vulkan physical device found.\n");
+            WERROR("No suitable Vulkan physical device found.");
             return false;
         }
 
-        fprintf(stderr, "Physical device selected.\n"); 
+        WINFO("Physical device selected."); 
         return true;
     }
 
@@ -529,7 +528,7 @@ namespace vulkan_renderer
                                           const VkPhysicalDeviceProperties* properties,
                                           const VkPhysicalDeviceFeatures* features,
                                           const vulkan_physical_device_requirements_s* requirements,
-                                          vulkan_queue_family_indices_s* out_queue_family_indices)
+                                          vulkan_queue_family_indices* out_queue_family_indices)
     {
         out_queue_family_indices->graphics_queue_index = -1;
         out_queue_family_indices->present_queue_index = -1;
@@ -540,7 +539,7 @@ namespace vulkan_renderer
         {
             if (properties->deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
             {
-                fprintf(stderr, "Skipping device: discrete GPU required, but not found.\n");
+                WWARNING("Skipping device: discrete GPU required, but not found.");
                 return false;
             }
         }
@@ -554,7 +553,7 @@ namespace vulkan_renderer
             vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &queue_family_count, queue_properties.data);
         }
 
-        fprintf(stderr, "Graphics | Present | Compute | Transfer | Name\n");
+        WINFO("Graphics | Present | Compute | Transfer | Name");
         u8 min_transfer_score = 255;
         for (u32 queue_family_index = 0; queue_family_index < queue_family_count; ++queue_family_index)
         {
@@ -604,30 +603,30 @@ namespace vulkan_renderer
 
                     if (out_queue_family_indices->present_queue_index != out_queue_family_indices->graphics_queue_index)
                     {
-                        fprintf(stderr, "Warning: Present and graphics operations use different queue families.\n");
+                        WWARNING("Present and graphics operations use different queue families.");
                     }
                 }
             }
         }
 
-        fprintf(stderr, "       %d |       %d |       %d |        %d | %s\n",
-                out_queue_family_indices->graphics_queue_index != -1,
-                out_queue_family_indices->present_queue_index != -1,
-                out_queue_family_indices->compute_queue_index != -1,
-                out_queue_family_indices->transfer_queue_index != -1,
-                properties->deviceName);
+        WINFO("       %d |       %d |       %d |        %d | %s",
+              out_queue_family_indices->graphics_queue_index != -1,
+              out_queue_family_indices->present_queue_index != -1,
+              out_queue_family_indices->compute_queue_index != -1,
+              out_queue_family_indices->transfer_queue_index != -1,
+              properties->deviceName);
 
         if ((!requirements->graphics || (requirements->graphics && out_queue_family_indices->graphics_queue_index != -1)) &&
             (!requirements->present || (requirements->present && out_queue_family_indices->present_queue_index != -1)) &&
             (!requirements->compute || (requirements->compute && out_queue_family_indices->compute_queue_index != -1)) &&
             (!requirements->transfer || (requirements->transfer && out_queue_family_indices->transfer_queue_index != -1))) 
         {
-            fprintf(stderr, "[info] Device meets queue requirements.\n");
+            WINFO("Device meets queue requirements.");
 
-            fprintf(stderr, "Graphics queue family index: %d\n", out_queue_family_indices->graphics_queue_index);
-            fprintf(stderr, "Present  queue family index: %d\n", out_queue_family_indices->present_queue_index);
-            fprintf(stderr, "Transfer queue family index: %d\n", out_queue_family_indices->transfer_queue_index);
-            fprintf(stderr, "Compute  queue family index: %d\n", out_queue_family_indices->compute_queue_index);
+            WINFO("Graphics queue family index: %d", out_queue_family_indices->graphics_queue_index);
+            WINFO("Present  queue family index: %d", out_queue_family_indices->present_queue_index);
+            WINFO("Transfer queue family index: %d", out_queue_family_indices->transfer_queue_index);
+            WINFO("Compute  queue family index: %d", out_queue_family_indices->compute_queue_index);
 
             if (requirements->device_extension_names.data)
             {
@@ -653,7 +652,7 @@ namespace vulkan_renderer
     
                         if (!found) 
                         {
-                            fprintf(stderr, "Required extension not found: '%s', skipping device.", requirements->device_extension_names.data[requirement_index]);
+                            WERROR("Required extension not found: '%s', skipping device.", requirements->device_extension_names.data[requirement_index]);
                             dynarray_destroy(&available_extensions);
                             return false;
                         }
@@ -665,7 +664,7 @@ namespace vulkan_renderer
 
         if (requirements->sampler_anisotropy && !features->samplerAnisotropy)
         {
-            fprintf(stderr, "Device does not support samplerAnisotropy, skipping.");
+            WERROR("Device does not support samplerAnisotropy, skipping.");
             return false;
         }
 

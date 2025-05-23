@@ -25,7 +25,7 @@ static sphere<f64> spheres[4];
 
 namespace software_renderer
 {
-    b8 renderer_startup(renderer_config_s renderer_config)
+    b8 renderer_startup(renderer_config renderer_config)
     {
         if (!software_platform_startup())
         {

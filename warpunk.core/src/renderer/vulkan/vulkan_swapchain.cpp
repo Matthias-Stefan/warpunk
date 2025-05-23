@@ -6,12 +6,12 @@
 
 namespace vulkan_renderer
 {
-    static b8 create(const vulkan_state_s* const state, vulkan_swapchain_support_info_s* swapchain_support, u32 width, u32 height, vulkan_swapchain_s* out_swapchain);
+    static b8 create(const vulkan_state* const state, vulkan_swapchainupport_info* swapchain_support, u32 width, u32 height, vulkan_swapchain* out_swapchain);
 
-    b8 vulkan_swapchain_create(const vulkan_state_s* const state,
-                               vulkan_swapchain_support_info_s* swapchain_support,
+    b8 vulkan_swapchain_create(const vulkan_state* const state,
+                               vulkan_swapchainupport_info* swapchain_support,
                                u32 width, u32 height,
-                               vulkan_swapchain_s* out_swapchain)
+                               vulkan_swapchain* out_swapchain)
     {
         return create(state, swapchain_support, width, height, out_swapchain);
     }
@@ -26,7 +26,7 @@ namespace vulkan_renderer
         return true;
     }
 
-    static b8 create(const vulkan_state_s* const state, vulkan_swapchain_support_info_s* swapchain_support, u32 width, u32 height, vulkan_swapchain_s* out_swapchain)
+    static b8 create(const vulkan_state* const state, vulkan_swapchainupport_info* swapchain_support, u32 width, u32 height, vulkan_swapchain* out_swapchain)
     {
         renderer_device_query_swapchain_support(swapchain_support);
      

@@ -4,6 +4,8 @@
 #include "warpunk.core/src/utils/logger.h"
 #include "warpunk.core/src/platform/platform.h"
 
+#include <string.h>
+
 #include <windows.h>
 #include <windowsx.h>
 #include <stdlib.h>
@@ -78,25 +80,34 @@ b8 platform_get_window_info(platform_window_info* platform_window_info)
     return true;
 }
 
+//
+// MEMORY 
+// 
+
+#define ALIGNMENT 16
 void* platform_memory_alloc(s64 size)
 {
-    return nullptr;
+    return (void*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, size);
 }
 
 void platform_memory_free(void* src)
 {
+    HeapFree(GetProcessHeap(), 0, src);
 }
 
 void platform_memory_copy(void* dst, void* src, s64 size)
 {
+    memcpy(dst, src, size);
 }
 
 void platform_memory_set(void* dst, s64 size, s32 value)
 {
+    memset(dst, value, size);
 }
 
 void platform_memory_zero(void* dst, s64 size)
 {
+    memset(dst, 0, size);
 }
 
 void platform_console_write(log_level level, const char* message)
@@ -113,7 +124,7 @@ void platform_console_write(log_level level, const char* message)
         FOREGROUND_GREEN | FOREGROUND_INTENSITY,                   // SUCCESS
         FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY,  // WARNING
         FOREGROUND_RED | FOREGROUND_INTENSITY,                     // ERROR
-        BACKGROUND_RED | FOREGROUND_INTENSITY,                     // FATAL
+        BACKGROUND_RED | FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY, // FATAL                   // FATAL
         FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_INTENSITY,   // DEBUG
         FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE        // VERBOSE
     };

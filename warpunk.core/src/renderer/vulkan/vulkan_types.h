@@ -35,25 +35,25 @@ namespace vulkan_renderer
         b8 discrete_gpu;
     } vulkan_physical_device_requirements_s;
 
-    typedef struct _vulkan_queue_family_indices_s
+    typedef struct vulkan_queue_family_indices
     { 
         s32 graphics_queue_index;
         s32 present_queue_index;
         s32 compute_queue_index;
         s32 transfer_queue_index;
-    } vulkan_queue_family_indices_s;
+    } vulkan_queue_family_indices;
 
-    typedef struct _vulkan_swapchain_support_info_s
+    typedef struct vulkan_swapchainupport_info
     {
         VkSurfaceCapabilitiesKHR capabilities;
         u32 format_count;
         VkSurfaceFormatKHR* formats;
         u32 present_mode_count;
         VkPresentModeKHR* present_modes;
-    } vulkan_swapchain_support_info_s;
+    } vulkan_swapchainupport_info;
 
 
-    typedef struct _vulkan_state_s
+    typedef struct vulkan_state
     {
         b8 is_initialized;
         VkInstance instance;
@@ -65,7 +65,7 @@ namespace vulkan_renderer
         VkPhysicalDevice physical_device = VK_NULL_HANDLE; 
        
         // NOTE: queues
-        vulkan_queue_family_indices_s queue_family_indices;
+        vulkan_queue_family_indices queue_family_indices;
         VkQueue graphics_queue;
         VkQueue present_queue;
         VkQueue compute_queue;
@@ -87,10 +87,10 @@ namespace vulkan_renderer
         VkCommandPool command_pool;
  
         // NOTE: swapchain
-        vulkan_swapchain_support_info_s swapchain_support;
-    } vulkan_state_s;
+        vulkan_swapchainupport_info swapchain_support;
+    } vulkan_state;
     
-    typedef struct _vulkan_swapchain_s
+    typedef struct vulkan_swapchain
     {
         VkSurfaceFormatKHR image_format;
         VkSwapchainKHR handle;
@@ -99,5 +99,5 @@ namespace vulkan_renderer
         b8 supports_blit_src;
         u32* color_texture;
         u32 image_index;
-    } vulkan_swapchain_s;
+    } vulkan_swapchain;
 }
