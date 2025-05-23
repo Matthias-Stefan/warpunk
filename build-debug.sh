@@ -36,11 +36,11 @@ done
 
 # Compile the game into a shared library (DLL or .so)
 echo "Compiling magicians_misfits into a shared library..."
-clang++ -std=c++17 -g -gdwarf-5 -O0 -I./ -shared -fPIC magicians_misfits/magicians_misfits.cpp -o bin/debug/magicians_misfits.so
+clang++ -std=c++20 -g -gdwarf-5 -O0 -I./ -shared -fPIC magicians_misfits/magicians_misfits.cpp -o bin/debug/magicians_misfits.so
 
 # Link the engine object files into the final executable
 echo "Linking object files into the final executable..."
-clang++ -std=c++17 -g -rdynamic -o bin/debug/warpunk.out bin/debug/main.o $WARPUNK_O_FILES -lvulkan -ldl -lX11 -lX11-xcb -lxcb
+clang++ -std=c++20 -g -rdynamic -o bin/debug/warpunk.out bin/debug/main.o $WARPUNK_O_FILES -lvulkan -ldl -lX11 -lX11-xcb -lxcb
 
 # Check if the build was successful
 if [ $? -eq 0 ]; then

@@ -37,7 +37,7 @@ void platform_shutdown()
 }
 
 
-no_mangle warpunk_api void platform_process_input()
+void platform_process_input()
 {
     int x = 5;
     (void)x;
@@ -99,7 +99,7 @@ void platform_memory_zero(void* dst, s64 size)
 {
 }
 
-no_mangle warpunk_api void platform_console_write(log_level level, const char* message)
+void platform_console_write(log_level level, const char* message)
 {
     b8 is_error = (level == LOG_LEVEL_ERROR || level == LOG_LEVEL_FATAL);
     HANDLE console_handle = GetStdHandle(is_error ? STD_ERROR_HANDLE : STD_OUTPUT_HANDLE);

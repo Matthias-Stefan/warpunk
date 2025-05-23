@@ -1,0 +1,90 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\mat019\\Documents\\warpunk\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\mat019\\Documents\\warpunk\\bin\\debug\\magicians_misfits.exe||{177559E0-D141-11D0-92DF-00A0C9138C45}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:bin\\debug\\magicians_misfits.exe||{177559E0-D141-11D0-92DF-00A0C9138C45}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\mat019\\Documents\\warpunk\\warpunk.runtime\\src\\entry.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:warpunk.runtime\\src\\entry.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\mat019\\Documents\\warpunk\\magicians_misfits\\magicians_misfits.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:magicians_misfits\\magicians_misfits.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\mat019\\Documents\\warpunk\\warpunk.core\\src\\utils\\logger.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:warpunk.core\\src\\utils\\logger.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 230,
+          "SelectedChildIndex": 1,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{aa2115a1-9712-457b-9047-dbb71ca2cdd2}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "magicians_misfits.exe",
+              "DocumentMoniker": "C:\\Users\\mat019\\Documents\\warpunk\\bin\\debug\\magicians_misfits.exe",
+              "RelativeDocumentMoniker": "bin\\debug\\magicians_misfits.exe",
+              "ToolTip": "C:\\Users\\mat019\\Documents\\warpunk\\bin\\debug\\magicians_misfits.exe",
+              "RelativeToolTip": "bin\\debug\\magicians_misfits.exe",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000165|",
+              "WhenOpened": "2025-05-23T06:46:34.068Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "entry.h",
+              "DocumentMoniker": "C:\\Users\\mat019\\Documents\\warpunk\\warpunk.runtime\\src\\entry.h",
+              "RelativeDocumentMoniker": "warpunk.runtime\\src\\entry.h",
+              "ToolTip": "C:\\Users\\mat019\\Documents\\warpunk\\warpunk.runtime\\src\\entry.h",
+              "RelativeToolTip": "warpunk.runtime\\src\\entry.h",
+              "ViewState": "AgIAABUAAAAAAAAAAAAAADwAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2025-05-23T06:46:05.593Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "magicians_misfits.cpp",
+              "DocumentMoniker": "C:\\Users\\mat019\\Documents\\warpunk\\magicians_misfits\\magicians_misfits.cpp",
+              "RelativeDocumentMoniker": "magicians_misfits\\magicians_misfits.cpp",
+              "ToolTip": "C:\\Users\\mat019\\Documents\\warpunk\\magicians_misfits\\magicians_misfits.cpp",
+              "RelativeToolTip": "magicians_misfits\\magicians_misfits.cpp",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABQAAAAQAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-05-23T06:45:59.341Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "logger.cpp",
+              "DocumentMoniker": "C:\\Users\\mat019\\Documents\\warpunk\\warpunk.core\\src\\utils\\logger.cpp",
+              "RelativeDocumentMoniker": "warpunk.core\\src\\utils\\logger.cpp",
+              "ToolTip": "C:\\Users\\mat019\\Documents\\warpunk\\warpunk.core\\src\\utils\\logger.cpp",
+              "RelativeToolTip": "warpunk.core\\src\\utils\\logger.cpp",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABEAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-05-23T06:45:42.961Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

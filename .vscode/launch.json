@@ -1,18 +1,21 @@
 {
     "version": "0.2.0",
     "configurations": [
-        {
-            "name": "Launch Warpunk (LLDB)",
-            "type": "lldb",
-            "request": "launch",
-            "program": "${workspaceFolder}/bin/debug/magicians_misfits.exe",
-            "args": [],
-            "cwd": "${workspaceFolder}",
-            "stopOnEntry": false,
-            "env": {
-                "VK_LOADER_DEBUG": "all"
-            },
-            "terminal": "integrated"
+    {
+        "name": "Debug Game (cppvsdbg)",
+        "type": "cppvsdbg",
+        "request": "launch",
+        "program": "${workspaceFolder}/bin/debug/magicians_misfits.exe",
+        "args": [],
+        "stopAtEntry": false,
+        "cwd": "${workspaceFolder}/bin/debug",
+        "environment": [],
+        "console": "newExternalWindow",
+        "symbolSearchPath": "${workspaceFolder}/bin/debug",
+        "logging": {
+            "moduleLoad": true,
+            "trace": true
         }
+    }
     ]
 }

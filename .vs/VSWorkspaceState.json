@@ -1,0 +1,15 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\bin",
+    "\\bin\\debug",
+    "\\magicians_misfits",
+    "\\warpunk.core",
+    "\\warpunk.core\\src",
+    "\\warpunk.core\\src\\utils",
+    "\\warpunk.runtime",
+    "\\warpunk.runtime\\src"
+  ],
+  "SelectedNode": "\\bin\\debug",
+  "PreviewInSolutionExplorer": false
+}
