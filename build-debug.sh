@@ -1,54 +1,86 @@
 #!/bin/bash
+set -e
 
-# Get the absolute path of the script
-SCRIPT_PATH="$(realpath "$0")"
-SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
+# ================================
+# Paths
+# ================================
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DEBUG_DIR="$SCRIPT_DIR/bin/debug"
+CORE_DIR="$SCRIPT_DIR/warpunk.core"
+RUNTIME_DIR="$SCRIPT_DIR/warpunk.runtime"
+GAME_SRC="$SCRIPT_DIR/magicians_misfits/magicians_misfits.cpp"
 
-# Output directories
-DEBUG_DIR="${SCRIPT_DIR}/bin/debug"
-
-# Ensure output directories exist
 mkdir -p "$DEBUG_DIR"
+mkdir -p "$DEBUG_DIR/warpunk.core"
+mkdir -p "$DEBUG_DIR/warpunk.runtime"
 
+# ================================
 # Compiler and flags
-CXX="clang++"
-CXXFLAGS="-std=c++17 -Werror -Wunused-function -g -O0 -DWARPUNK_EXPORT -DWARPUNK_DEBUG -fPIC -fvisibility=hidden"
-INCLUDES="-I${SCRIPT_DIR} -I${SCRIPT_DIR}/warpunk.core -I/usr/include"
+# ================================
+CXX=clang++
+CXXFLAGS="-std=c++17 -g -O0 -Wall -Wextra -fPIC -DWARPUNK_DEBUG=1"
+INCLUDES="-I$SCRIPT_DIR -I$CORE_DIR -I$RUNTIME_DIR"
+LIBS="-lvulkan -ldl -lX11 -lX11-xcb -lxcb"
 
-# Compile files in warpunk.core
-echo "Compiling files in warpunk.core:"
-$CXX $CXXFLAGS $INCLUDES -c main.cpp -o bin/debug/main.o
+# ================================
+# Build warpunk.core (shared lib)
+# ================================
+echo
+echo "========================================="
+echo "Building warpunk.core (Shared Library)"
+echo "========================================="
 
-WARPUNK_CPP_FILES=$(find "${SCRIPT_DIR}/warpunk.core" -name "*.cpp")
-WARPUNK_O_FILES=
-for file in $WARPUNK_CPP_FILES; do
-    RELATIVE_PATH=${file#${SCRIPT_DIR}/}
-    echo "$RELATIVE_PATH"
-    OBJECT_FILE="${DEBUG_DIR}/${RELATIVE_PATH%.cpp}.o"
-    mkdir -p "$(dirname "$OBJECT_FILE")"
-    $CXX $CXXFLAGS $INCLUDES -c "$file" -o "$OBJECT_FILE"
-    if [ $? -ne 0 ]; then
-        echo "Compilation failed for $RELATIVE_PATH"
-        exit 1
-    fi
-    WARPUNK_O_FILES="$WARPUNK_O_FILES $OBJECT_FILE"
+CORE_OBJS=""
+for src in $(find "$CORE_DIR" -name "*.cpp"); do
+    obj="$DEBUG_DIR/warpunk.core/$(basename "$src" .cpp).o"
+    echo "Compiling $src"
+    $CXX $CXXFLAGS -DWARPUNK_EXPORT=1 $INCLUDES -c "$src" -o "$obj"
+    CORE_OBJS="$CORE_OBJS $obj"
 done
 
-# Compile the game into a shared library (DLL or .so)
-echo "Compiling magicians_misfits into a shared library..."
-clang++ -std=c++20 -g -gdwarf-5 -O0 -I./ -shared -fPIC magicians_misfits/magicians_misfits.cpp -o bin/debug/magicians_misfits.so
+$CXX -shared -o "$DEBUG_DIR/libwarpunk.core.so" $CORE_OBJS $LIBS
 
-# Link the engine object files into the final executable
-echo "Linking object files into the final executable..."
-clang++ -std=c++20 -g -rdynamic -o bin/debug/warpunk.out bin/debug/main.o $WARPUNK_O_FILES -lvulkan -ldl -lX11 -lX11-xcb -lxcb
+# ================================
+# Build warpunk.runtime (shared lib)
+# ================================
+echo
+echo "========================================="
+echo "Building warpunk.runtime (Shared Library)"
+echo "========================================="
 
-# Check if the build was successful
-if [ $? -eq 0 ]; then
-    echo "Build successful!"
-    echo "Executable is located at: bin/debug/warpunk.out"
-    echo "Shared library is located at: bin/debug/magicians_misfits.so"
-else
-    echo "Build failed."
-    exit 1
-fi
+RUNTIME_OBJS=""
+for src in $(find "$RUNTIME_DIR" -name "*.cpp"); do
+    obj="$DEBUG_DIR/warpunk.runtime/$(basename "$src" .cpp).o"
+    echo "Compiling $src"
+    $CXX $CXXFLAGS -DWARPUNK_EXPORT=1 $INCLUDES -c "$src" -o "$obj"
+    RUNTIME_OBJS="$RUNTIME_OBJS $obj"
+done
 
+$CXX -shared -o "$DEBUG_DIR/libwarpunk.runtime.so" $RUNTIME_OBJS \
+    -L"$DEBUG_DIR" -lwarpunk.core $LIBS
+
+# ================================
+# Build magicians_misfits (executable)
+# ================================
+echo
+echo "========================================="
+echo "Building magicians_misfits (Executable)"
+echo "========================================="
+
+GAME_OBJ="$DEBUG_DIR/magicians_misfits.o"
+$CXX $CXXFLAGS $INCLUDES -DWARPUNK_IMPORT=1 -c "$GAME_SRC" -o "$GAME_OBJ"
+
+$CXX -o "$DEBUG_DIR/magicians_misfits" "$GAME_OBJ" \
+    -L"$DEBUG_DIR" -Wl,-rpath,'$ORIGIN' \
+    -lwarpunk.core -lwarpunk.runtime $LIBS
+
+# ================================
+# Done
+# ================================
+echo
+echo "========================================="
+echo "Build complete!"
+echo "  → $DEBUG_DIR/libwarpunk.core.so"
+echo "  → $DEBUG_DIR/libwarpunk.runtime.so"
+echo "  → $DEBUG_DIR/magicians_misfits"
+echo "========================================="

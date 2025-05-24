@@ -1,21 +1,32 @@
 {
-    "version": "0.2.0",
-    "configurations": [
+  "version": "0.2.0",
+  "configurations": [
     {
-        "name": "Debug Game (cppvsdbg)",
-        "type": "cppvsdbg",
+        "name": "Debug Game (Windows - cppvsdbg)",
+        "type": "lldb",
+        "linux": {
+            "program": "${workspaceFolder}/bin/debug/magicians_misfits",
+            "env": {
+                "VK_LOADER_DEBUG": "all"
+            },
+            "console": "integratedTerminal"
+        },
+        "windows": {
+            "type": "cppvsdbg",
+            "program": "${workspaceFolder}/bin/debug/magicians_misfits.exe",
+            "console": "newExternalWindow",
+        },
+
         "request": "launch",
-        "program": "${workspaceFolder}/bin/debug/magicians_misfits.exe",
         "args": [],
         "stopAtEntry": false,
         "cwd": "${workspaceFolder}/bin/debug",
         "environment": [],
-        "console": "newExternalWindow",
         "symbolSearchPath": "${workspaceFolder}/bin/debug",
         "logging": {
             "moduleLoad": true,
             "trace": true
-        }
-    }
+        },
+    },
     ]
 }

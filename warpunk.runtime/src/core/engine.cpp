@@ -1,5 +1,6 @@
 #include "warpunk.runtime/src/core/engine.h"
 
+#include <warpunk.core/src/input_system/input_system.h>
 #include <warpunk.core/src/platform/platform.h>
 #include <warpunk.core/src/renderer/renderer_backend.h>
 #include <warpunk.core/src/time/runtime_clock.h>
@@ -21,11 +22,36 @@ b8 engine_create(struct application* app)
 {
     state.is_running = true;
 
+    // Platform system
+    {
+        // TODO: config
+        if (!platform_startup())
+        {
+            WERROR("Failed to initialize platform system.");
+            return false;
+        }
+    }
+
+    // Input system
+    {
+        if (!input_system_startup())
+        {
+            WERROR("Failed to initialize input system.");
+            return false;
+        }
+
+        platform_register_keyboard_event(input_system_process_key);
+        platform_register_mouse_button_event(input_system_process_mouse_button);
+        platform_register_mouse_move_event(input_system_process_mouse_move);
+        platform_register_mouse_wheel_event(input_system_process_mouse_wheel);
+    }
+
     // Renderer system
     {
         // TODO: Later from the config
         renderer_config config = {};
         config.type = RENDERER_TYPE_VULKAN;
+        config.application_name = "Magicians Misfits";
         config.width = 1920 / 2;
         config.aspect_ratio = 16.0 / 9.0;
         config.flags = RENDERER_CONFIG_FLAG_VSYNC_ENABLED_BIT;

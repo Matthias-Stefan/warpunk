@@ -6,8 +6,6 @@
 
 #include <vector>
 
-//////////////////////////////////////////////////////////////////////
-
 typedef struct function_description
 {
     const char* name;
@@ -81,9 +79,9 @@ no_mangle warpunk_api b8 platform_set_window_mode(platform_window_mode platform_
 /** */
 no_mangle warpunk_api b8 platform_get_window_info(platform_window_info* platform_window_info);
 
-/** ------ */
-/** memory */
-/** ------ */
+/**
+ * =================== PLATFORM MEMORY ===================
+ */
 
 /** */
 no_mangle warpunk_api void* platform_memory_alloc(s64 size);
@@ -100,21 +98,21 @@ no_mangle warpunk_api void platform_memory_set(void* dst, s64 size, s32 value);
 /** */
 no_mangle warpunk_api void platform_memory_zero(void* dst, s64 size);
 
-/** ------- */
-/** console */
-/** ------- */
+/**
+ * =================== PLATFORM CONSOLE ===================
+ */
 
 no_mangle warpunk_api void platform_console_write(log_level level, const char* message);
 
-/** ----- */
-/** clock */
-/** ----- */
+/**
+ * =================== PLATFORM CLOCK ===================
+ */
 
 no_mangle warpunk_api f64 platform_get_absolute_time();
 
-/** --------- */
-/** threading */
-/** --------- */
+/**
+ * =================== PLATFORM THREADING ===================
+ */
 
 /** */
 no_mangle warpunk_api void platform_threadpool_add(platform_threading_job* jobs, u32 chunk_count, thread_ticket* out_ticket);
@@ -122,9 +120,9 @@ no_mangle warpunk_api void platform_threadpool_add(platform_threading_job* jobs,
 /** */
 no_mangle warpunk_api void platform_threadpool_sync(thread_ticket ticket, f64 cancellation_time);
 
-/** ------ */
-/** events */
-/** ------ */
+/**
+ * =================== PLATFORM EVENTS ===================
+ */
 
 /** */
 typedef void (*platform_keyboard_event_t)(keycode keycode, b8 pressed);

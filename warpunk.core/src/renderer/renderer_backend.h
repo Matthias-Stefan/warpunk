@@ -12,6 +12,7 @@ typedef enum renderer_type
 typedef struct renderer_config
 {
     renderer_type type;
+    const char* application_name;
     s32 width;
     f64 aspect_ratio;
     renderer_config_flag flags;

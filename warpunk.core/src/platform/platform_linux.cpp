@@ -51,8 +51,6 @@
 static keycode translate_keycode(const unsigned int key_code);
 static void* platform_thread_main_routine(void* args);
 
-//////////////////////////////////////////////////////////////////////
-
 typedef struct thread_handle
 {
     thread_ticket ticket;
@@ -84,13 +82,8 @@ typedef struct linux_state
     platform_mouse_wheel_event_t mouse_wheel_event;
 } linux_state;
 
-//////////////////////////////////////////////////////////////////////
-
 // NOTE: Global
-
-static linux_state linux_state;
-
-//////////////////////////////////////////////////////////////////////
+static linux_state state;
 
 static const char* platform_get_error_name(uint8_t error_code)
 {
@@ -120,10 +113,10 @@ static const char* platform_get_error_name(uint8_t error_code)
 
 b8 platform_result_is_success(xcb_void_cookie_t cookie)
 {
-    xcb_generic_error_t* error = xcb_request_check(linux_state.handle.connection, cookie);
+    xcb_generic_error_t* error = xcb_request_check(state.handle.connection, cookie);
     if (error != NULL)
     {
-        fprintf(stderr, "[%s] %i", platform_get_error_name(error->error_code), error->full_sequence);
+        WERROR("[%s] %i", platform_get_error_name(error->error_code), error->full_sequence);
         return false;
     }
 
@@ -132,23 +125,23 @@ b8 platform_result_is_success(xcb_void_cookie_t cookie)
 
 b8 platform_get_linux_handle(linux_handle *out_linux_handle)
 {
-    if (linux_state.handle.connection == nullptr || linux_state.handle.window == 0 || linux_state.handle.screen == nullptr)
+    if (state.handle.connection == nullptr || state.handle.window == 0 || state.handle.screen == nullptr)
     {
         out_linux_handle = nullptr;
         return false;
     }
 
-    *out_linux_handle = linux_state.handle;
+    *out_linux_handle = state.handle;
     return true;
 }
 
 xcb_atom_t platform_get_atom(const char* name)
 {
-    xcb_intern_atom_cookie_t cookie = xcb_intern_atom(linux_state.handle.connection, 0, strlen(name), name);
-    xcb_intern_atom_reply_t* reply = xcb_intern_atom_reply(linux_state.handle.connection, cookie, NULL);
+    xcb_intern_atom_cookie_t cookie = xcb_intern_atom(state.handle.connection, 0, strlen(name), name);
+    xcb_intern_atom_reply_t* reply = xcb_intern_atom_reply(state.handle.connection, cookie, NULL);
     if (!reply) 
     {
-        fprintf(stderr, "Failed to get atom for %s\n", name);
+        WERROR("Failed to get atom for %s\n", name);
         return XCB_ATOM_NONE;
     }
 
@@ -158,33 +151,31 @@ xcb_atom_t platform_get_atom(const char* name)
     return atom;
 }
 
-//////////////////////////////////////////////////////////////////////
-
 bool platform_startup()
 {
-    linux_state.display = XOpenDisplay(NULL);
-    if (linux_state.display == NULL)
+    state.display = XOpenDisplay(NULL);
+    if (state.display == NULL)
     {
-        fprintf(stderr, "Failed to open display\n");
+        WERROR("Failed to open display\n");
         return false;
     }
 
-    linux_state.handle.connection = XGetXCBConnection(linux_state.display);
-    if (xcb_connection_has_error(linux_state.handle.connection))  
+    state.handle.connection = XGetXCBConnection(state.display);
+    if (xcb_connection_has_error(state.handle.connection))  
     {
-        fprintf(stderr, "Failed to connect to X server.\n");
+        WERROR("Failed to connect to X server.\n");
         return false;
     }
 
-    const xcb_setup_t* setup = xcb_get_setup(linux_state.handle.connection);
+    const xcb_setup_t* setup = xcb_get_setup(state.handle.connection);
     xcb_screen_iterator_t iter = xcb_setup_roots_iterator(setup);
-    linux_state.handle.screen = iter.data;
+    state.handle.screen = iter.data;
 
-    fprintf(stderr, "%i\n", linux_state.handle.screen->root_depth);
+    WERROR("%i\n", state.handle.screen->root_depth);
 
-    linux_state.handle.window = xcb_generate_id(linux_state.handle.connection);
+    state.handle.window = xcb_generate_id(state.handle.connection);
     u32 value_mask = XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK;
-    u32 value_list[] = { linux_state.handle.screen->black_pixel, 
+    u32 value_list[] = { state.handle.screen->black_pixel, 
         XCB_EVENT_MASK_EXPOSURE | 
         XCB_EVENT_MASK_KEY_PRESS | XCB_EVENT_MASK_KEY_RELEASE | 
         XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE | 
@@ -195,46 +186,46 @@ bool platform_startup()
     s32 border_width = 0;
 
     if (!platform_result_is_success(xcb_create_window_checked(
-                    linux_state.handle.connection,       // X server connection
+                    state.handle.connection,       // X server connection
                     XCB_COPY_FROM_PARENT,                // Window depth
-                    linux_state.handle.window,           // Window ID
-                    linux_state.handle.screen->root,            // Parent window (root)
+                    state.handle.window,           // Window ID
+                    state.handle.screen->root,            // Parent window (root)
                     0, 0,                                // Position (x, y)
                     window_width, window_height,         // Size (width, height)
                     border_width,                        // Border width
                     XCB_WINDOW_CLASS_INPUT_OUTPUT,       // Window class
-                    linux_state.handle.screen->root_visual,     // Visual
+                    state.handle.screen->root_visual,     // Visual
                     value_mask,                          // Value mask
                     value_list)))                        // Value list
     {
-        fprintf(stderr, "Failed to create window.\n");
+        WERROR("Failed to create window.\n");
         return false;
     }
    
     if (!platform_result_is_success(xcb_map_window_checked(
-                    linux_state.handle.connection, 
-                    linux_state.handle.window)))
+                    state.handle.connection, 
+                    state.handle.window)))
     {
-        fprintf(stderr, "Failed to map window.\n");
+        WERROR("Failed to map window.\n");
     }
 
-    xcb_flush(linux_state.handle.connection);
+    xcb_flush(state.handle.connection);
 
     /** threading */
-    pthread_mutex_init(&linux_state.mutex, nullptr);
+    pthread_mutex_init(&state.mutex, nullptr);
 
     return true;
 }
 
 void platform_shutdown()
 {
-    xcb_disconnect(linux_state.handle.connection);
+    xcb_disconnect(state.handle.connection);
 }
 
 void platform_process_input()
 {
     xcb_generic_event_t* event;
-    while ((event = xcb_poll_for_event(linux_state.handle.connection)))
+    while ((event = xcb_poll_for_event(state.handle.connection)))
     {
         switch (event->response_type & ~0x80) 
         {
@@ -243,11 +234,11 @@ void platform_process_input()
             {
                 xcb_key_press_event_t* key_event = reinterpret_cast<xcb_key_press_event_t*>(event);
                 b8 pressed = key_event->response_type == XCB_KEY_PRESS; 
-                xcb_keycode code = key_event->detail;
-                KeySym key_sym = XkbKeycodeToKeysym(linux_state.display, code, 0, 0);
+                xcb_keycode_t code = key_event->detail;
+                KeySym key_sym = XkbKeycodeToKeysym(state.display, code, 0, 0);
                 keycode keycode = translate_keycode(key_sym);
 
-                linux_state.keyboard_event(keycode, pressed);
+                state.keyboard_event(keycode, pressed);
                 
                 if (keycode == KEY_ESCAPE)
                 {
@@ -266,72 +257,72 @@ void platform_process_input()
                     case PLATFORM_MOUSE_BUTTON_LEFT:
                     {
                         mouse_button = MOUSE_BUTTON_LEFT;
-                        linux_state.mouse_button_event(mouse_button, pressed);
+                        state.mouse_button_event(mouse_button, pressed);
                     } break;
                     case PLATFORM_MOUSE_BUTTON_MIDDLE:
                     {
                         mouse_button = MOUSE_BUTTON_MIDDLE;
-                        linux_state.mouse_button_event(mouse_button, pressed);
+                        state.mouse_button_event(mouse_button, pressed);
                     } break;
                     case PLATFORM_MOUSE_BUTTON_RIGHT:
                     {
                         mouse_button = MOUSE_BUTTON_RIGHT;
-                        linux_state.mouse_button_event(mouse_button, pressed);
+                        state.mouse_button_event(mouse_button, pressed);
                     } break;
                     case PLATFORM_MOUSE_BUTTON_1:
                     {
                         mouse_button = MOUSE_BUTTON_1;
-                        linux_state.mouse_button_event(mouse_button, pressed);
+                        state.mouse_button_event(mouse_button, pressed);
                     } break;
                     case PLATFORM_MOUSE_BUTTON_2:
                     {
                         mouse_button = MOUSE_BUTTON_2;
-                        linux_state.mouse_button_event(mouse_button, pressed);
+                        state.mouse_button_event(mouse_button, pressed);
                     } break;
                     case PLATFORM_MOUSE_BUTTON_3:
                     {
                         mouse_button = MOUSE_BUTTON_3;
-                        linux_state.mouse_button_event(mouse_button, pressed);
+                        state.mouse_button_event(mouse_button, pressed);
                     } break;
                     case PLATFORM_MOUSE_BUTTON_4:
                     {
                         mouse_button = MOUSE_BUTTON_4;
-                        linux_state.mouse_button_event(mouse_button, pressed);
+                        state.mouse_button_event(mouse_button, pressed);
                     } break;
                     case PLATFORM_MOUSE_BUTTON_5:
                     {
                         mouse_button = MOUSE_BUTTON_5;
-                        linux_state.mouse_button_event(mouse_button, pressed);
+                        state.mouse_button_event(mouse_button, pressed);
                     } break;
                     case PLATFORM_MOUSE_BUTTON_6:
                     {
                         mouse_button = MOUSE_BUTTON_6;
-                        linux_state.mouse_button_event(mouse_button, pressed);
+                        state.mouse_button_event(mouse_button, pressed);
                     } break;
                     case PLATFORM_MOUSE_BUTTON_7:
                     {
                         mouse_button = MOUSE_BUTTON_7;
-                        linux_state.mouse_button_event(mouse_button, pressed);
+                        state.mouse_button_event(mouse_button, pressed);
                     } break;
                     case PLATFORM_MOUSE_BUTTON_8:
                     {
                         mouse_button = MOUSE_BUTTON_8;
-                        linux_state.mouse_button_event(mouse_button, pressed);
+                        state.mouse_button_event(mouse_button, pressed);
                     } break;
                     case PLATFORM_MOUSE_BUTTON_9:
                     {
                         mouse_button = MOUSE_BUTTON_9;
-                        linux_state.mouse_button_event(mouse_button, pressed);
+                        state.mouse_button_event(mouse_button, pressed);
                     } break;
                     case PLATFORM_MOUSE_WHEEL_LEFT:
                     {
                         mouse_button = MOUSE_WHEEL_LEFT;
-                        linux_state.mouse_button_event(mouse_button, pressed);
+                        state.mouse_button_event(mouse_button, pressed);
                     } break;
                     case PLATFORM_MOUSE_WHEEL_RIGHT:
                     {
                         mouse_button = MOUSE_WHEEL_RIGHT;
-                        linux_state.mouse_button_event(mouse_button, pressed);
+                        state.mouse_button_event(mouse_button, pressed);
                     } break;                        
                 }
 
@@ -341,12 +332,12 @@ void platform_process_input()
                     case PLATFORM_MOUSE_WHEEL_UP:
                     {
                         delta = pressed ? 1 : 0; 
-                        linux_state.mouse_wheel_event(delta);
+                        state.mouse_wheel_event(delta);
                     } break;
                     case PLATFORM_MOUSE_WHEEL_DOWN:
                     {
                         delta = pressed ? -1 : 0;
-                        linux_state.mouse_wheel_event(delta);
+                        state.mouse_wheel_event(delta);
                     } break;
                
                 }
@@ -356,7 +347,7 @@ void platform_process_input()
             {
                 xcb_motion_notify_event_t* motion_event = reinterpret_cast<xcb_motion_notify_event_t*>(event);
 
-                linux_state.mouse_move_event(motion_event->event_x, motion_event->event_y);
+                state.mouse_move_event(motion_event->event_x, motion_event->event_y);
             } break;
 
             case XCB_CONFIGURE_NOTIFY:
@@ -392,7 +383,7 @@ b8 platform_get_window_handle(s32* out_size, void* out_platform_handle)
     }
 
     // TODO: Platform allocation methods 
-    memcpy(out_platform_handle, &linux_state.handle, sizeof(linux_handle));
+    memcpy(out_platform_handle, &state.handle, sizeof(linux_handle));
     return true;
 }
 
@@ -401,7 +392,7 @@ b8 platform_load_library(const char* path, library_context* out_library_context)
     void* library_handle = dlopen(path, RTLD_NOW);
     if (!library_handle)
     {
-        fprintf(stderr, "Failed to load library: %s\n", dlerror());
+        WERROR("Failed to load library: %s\n", dlerror());
         return false;
     }
 
@@ -413,7 +404,7 @@ b8 platform_unload_library(library_context* library_context)
 {
     if (dlclose(library_context->handle) != 0)
     {
-        fprintf(stderr, "Failed to unload library: %s\n", dlerror());
+        WERROR("Failed to unload library: %s\n", dlerror());
         return false;
     }
 
@@ -433,7 +424,7 @@ b8 platform_get_function(library_context* library_context, function_description*
     out_function_description->function = dlsym(library_context->handle, out_function_description->name);
     if (!out_function_description->function)
     {
-        fprintf(stderr, "Failed to load function: %s\n", dlerror());
+        WERROR("Failed to load function: %s\n", dlerror());
         return false;
     }
     out_function_description->is_dirty = false;
@@ -442,21 +433,21 @@ b8 platform_get_function(library_context* library_context, function_description*
     out_function_description->average_execution_time = 0.0f;
     library_context->functions.emplace_back(out_function_description);    
 
-    fprintf(stderr, "Loaded function successfully.\n");
+    WSUCCESS("Loaded function successfully.\n");
     return true; 
 }
 
 b8 platform_is_mouse_inside_window()
 {
-    xcb_connection_t* connection = linux_state.handle.connection;
-    xcb_window_t window = linux_state.handle.window;
+    xcb_connection_t* connection = state.handle.connection;
+    xcb_window_t window = state.handle.window;
 
     xcb_query_pointer_cookie_t pointer_cookie = xcb_query_pointer(connection, window);
     xcb_query_pointer_reply_t* pointer_reply = xcb_query_pointer_reply(connection, pointer_cookie, NULL);
 
     if (!pointer_reply) 
     {
-        fprintf(stderr, "Failed to query pointer.\n");
+        WERROR("Failed to query pointer.\n");
         return false;
     }
 
@@ -466,7 +457,7 @@ b8 platform_is_mouse_inside_window()
 
     if (!geom_reply)
     {
-        fprintf(stderr, "Failed to get window geometry.\n");
+        WERROR("Failed to get window geometry.\n");
         free(pointer_reply);
         return false;
     }
@@ -482,9 +473,9 @@ b8 platform_is_mouse_inside_window()
 
 b8 platform_set_window_mode(platform_window_mode platform_window_mode)
 {
-    xcb_connection_t* connection = linux_state.handle.connection;
-    xcb_window_t window = linux_state.handle.window;
-    xcb_screen_t* screen = linux_state.handle.screen;
+    xcb_connection_t* connection = state.handle.connection;
+    xcb_window_t window = state.handle.window;
+    xcb_screen_t* screen = state.handle.screen;
 
     xcb_atom_t wm_state_atom = platform_get_atom("_NET_WM_STATE");
     xcb_atom_t wm_state_fullscreen_atom = platform_get_atom("_NET_WM_STATE_FULLSCREEN");
@@ -541,12 +532,12 @@ b8 platform_get_window_info(platform_window_info* platform_window_info)
 {
     if (!platform_window_info)
     {
-        fprintf(stderr, "Failed to provide window info! platform_window_info is nullptr.\n");
+        WERROR("Failed to provide window info! platform_window_info is nullptr.\n");
         return false;
     }
 
-    xcb_connection_t* connection = linux_state.handle.connection;
-    xcb_window_t window = linux_state.handle.window;
+    xcb_connection_t* connection = state.handle.connection;
+    xcb_window_t window = state.handle.window;
 
      // I. Get Geometry (width, height)
     xcb_get_geometry_cookie_t geom_cookie = xcb_get_geometry(connection, window);
@@ -554,7 +545,7 @@ b8 platform_get_window_info(platform_window_info* platform_window_info)
 
     if (!geom_reply) 
     {
-        fprintf(stderr, "Failed to get window geometry.\n");
+        WERROR("Failed to get window geometry.\n");
         return false;
     }
 
@@ -568,7 +559,7 @@ b8 platform_get_window_info(platform_window_info* platform_window_info)
 
     if (!attr_reply) 
     {
-        fprintf(stderr, "Failed to get window attributes.\n");
+        WERROR("Failed to get window attributes.\n");
         return false;
     }
 
@@ -645,14 +636,16 @@ b8 platform_get_window_info(platform_window_info* platform_window_info)
         }
         
         free(wm_state_reply);
-    }
+    }    struct timespec now;
+    clock_gettime(CLOCK_MONOTONIC_RAW, &now);
+    return now.tv_sec + now.tv_nsec * 0.000000001;
 
     return true;
 }
 
-/************/
-/** memory **/
-/************/
+/**
+ * =================== PLATFORM MEMORY ===================
+ */
 
 void* platform_memory_alloc(s64 size)
 {
@@ -680,14 +673,37 @@ void platform_memory_zero(void* dst, s64 size)
     memset(dst, 0, size);
 }
 
-/***************/
-/** threading **/
-/***************/
+/**
+ * =================== PLATFORM CONSOLE ===================
+ */
+
+void platform_console_write(log_level level, const char* message)
+{
+    b8 is_error = (level == LOG_LEVEL_ERROR || level == LOG_LEVEL_FATAL);
+    FILE* console_handle = is_error ? stderr : stdout;
+    const char* color_strings[] = { "1;29", "1;32", "1;33", "1;31", "0;41", "1;34", "1;30" };
+    fprintf(console_handle, "\033[%sm%s\033[0m", color_strings[level], message);
+}
+
+/**
+ * =================== PLATFORM CLOCK ===================
+ */
+
+f64 platform_get_absolute_time()
+{
+    struct timespec now;
+    clock_gettime(CLOCK_MONOTONIC_RAW, &now);
+    return now.tv_sec + now.tv_nsec * 0.000000001;
+}
+
+/**
+ * =================== PLATFORM THREADING ===================
+ */
 
 static void* platform_thread_main_routine(void* args)
 {
     thread_handle* handle = (thread_handle *)args;
-    thread_context* thread_context = &linux_state.thread_contexts[handle->ticket];
+    thread_context* thread_context = &state.thread_contexts[handle->ticket];
     platform_threading_job* job = (platform_threading_job *)&thread_context->jobs.data[handle->thread_idx]; 
 
     if (job != nullptr && job->function != nullptr)
@@ -705,7 +721,7 @@ static void* platform_thread_main_routine(void* args)
     if (thread_context->active_thread_count == 0)
     {
         dynarray_destroy(&thread_context->jobs);
-        linux_state.thread_ticket_free_list[handle->ticket] = true;
+        state.thread_ticket_free_list[handle->ticket] = true;
         dynarray_destroy(&thread_context->handles);
     }
     pthread_mutex_unlock(&thread_context->mutex);
@@ -714,14 +730,14 @@ static void* platform_thread_main_routine(void* args)
 
 void platform_threadpool_add(platform_threading_job* jobs, u32 chunk_count, thread_ticket* out_ticket)
 {
-    pthread_mutex_lock(&linux_state.mutex);
+    pthread_mutex_lock(&state.mutex);
     b8 found = false;
     thread_ticket ticket_idx;
     for (ticket_idx = 0; ticket_idx < 64; ++ticket_idx)
     {
-        if (linux_state.thread_ticket_free_list[ticket_idx] == true)
+        if (state.thread_ticket_free_list[ticket_idx] == true)
         {
-            linux_state.thread_ticket_free_list[ticket_idx] = false;
+            state.thread_ticket_free_list[ticket_idx] = false;
             found = true;
             break;
         }
@@ -733,7 +749,7 @@ void platform_threadpool_add(platform_threading_job* jobs, u32 chunk_count, thre
 
     *out_ticket = ticket_idx;
 
-    thread_context* thread_context = &linux_state.thread_contexts[ticket_idx];
+    thread_context* thread_context = &state.thread_contexts[ticket_idx];
     if (thread_context->threads.data == nullptr)
     {
         thread_context->threads = dynarray_create<pthread_t>(chunk_count);
@@ -760,40 +776,40 @@ void platform_threadpool_add(platform_threading_job* jobs, u32 chunk_count, thre
                 platform_thread_main_routine,
                 &thread_context->handles.data[job_idx]);
     }
-    pthread_mutex_unlock(&linux_state.mutex);
+    pthread_mutex_unlock(&state.mutex);
 }
  
 void platform_threadpool_sync(thread_ticket ticket, f64 cancellation_time)
 {
-    thread_context* thread_context = &linux_state.thread_contexts[ticket];
+    thread_context* thread_context = &state.thread_contexts[ticket];
     for (s32 thread_idx = 0; thread_idx < thread_context->threads.size; ++thread_idx)
     {
         pthread_join(thread_context->threads.data[thread_idx], nullptr);
     }
 }
 
-/************/
-/** events **/
-/************/
+/**
+ * =================== PLATFORM EVENTS ===================
+ */
 
 void platform_register_keyboard_event(platform_keyboard_event_t callback)
 {
-    linux_state.keyboard_event = callback;
+    state.keyboard_event = callback;
 }
 
 void platform_register_mouse_button_event(platform_mouse_button_event_t callback)
 {
-    linux_state.mouse_button_event = callback;
+    state.mouse_button_event = callback;
 }
 
 void platform_register_mouse_move_event(platform_mouse_move_event_t callback)
 {
-    linux_state.mouse_move_event = callback;
+    state.mouse_move_event = callback;
 }
 
 void platform_register_mouse_wheel_event(platform_mouse_wheel_event_t callback)
 {
-    linux_state.mouse_wheel_event = callback;
+    state.mouse_wheel_event = callback;
 }
 
 static keycode translate_keycode(const unsigned int key_code)
